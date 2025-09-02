@@ -1,13 +1,51 @@
+// src/layout/Layout.jsx
 import styled from "styled-components";
+import { Outlet } from "react-router-dom";
+const SHELL_MAX_WIDTH = 480; // 큰 화면에서 중앙 고정폭 (원하면 414/430/520 등으로 조절)
 
-const PageContainer = styled.div`
-    width: 375px;
-    height: 812px;
-    margin: 0 auto;
-    border: 1px solid #ccc;
+const Frame = styled.div`
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+
+  @media (min-width: 768px) {
+    max-width: ${SHELL_MAX_WIDTH}px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    margin: 16px auto;
     overflow: hidden;
+  }
 `;
 
-export default function Layout({ children }) {
-    return <PageContainer>{children}</PageContainer>;
+const Body = styled.main`
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* 하단 안전영역(아이폰) + 바텀탭 높이 고려 */
+  padding-bottom: calc( env(safe-area-inset-bottom, 0px) + 72px );
+`;
+
+/* 바텀탭이 스크롤되지 않도록 Frame의 자식으로 두고 Body만 스크롤 */
+const FooterBar = styled.footer`
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: #fff;
+
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+`;
+
+export default function Layout() {
+  return (
+    <Frame>
+      <Body>
+        <Outlet />
+      </Body>
+    </Frame>
+  );
 }
