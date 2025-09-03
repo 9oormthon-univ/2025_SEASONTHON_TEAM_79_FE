@@ -4,6 +4,7 @@ import Login from "./auth/LoginPage/LoginPage";
 import FindId from "./auth/FindIdPage/FindIdPage";
 import Signup from "./auth/SignUpPage/SignUpPage";
 import FindPassword from "./auth/FindPasswordPage/FindPasswordPage";
+import Map from "./CurrentLocationMap/CurrentLocationMapPage";
 export default function App() {
   return (
     <Routes>
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="signup" element={<Signup />} />
         <Route path="find-id" element={<FindId />} />
         <Route path="find-password" element={<FindPassword />} />
+        <Route path="map" element={<Map/>}/>
       </Route>
     </Routes>
   );
