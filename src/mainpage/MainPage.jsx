@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "./Header";
-import StatusBar from "./StatusBar";
+//import StatusBar from "./StatusBar";
 import ContractChecklistSection from "./ContractChecklistSection";
 import RecommendedPropertiesSection from "./RecommendedPropertiesSection";
 
@@ -180,7 +180,7 @@ export default function MainPage() {
   return (
     <MainPageContainer>
       {/* 개발용 상태바 (프로덕션에서는 제거) */}
-      {process.env.NODE_ENV === "development" && <StatusBar />}
+      {/*process.env.NODE_ENV === "development" && <StatusBar />*/}
 
       <ContentWrapper>
         {/* 헤더 */}
