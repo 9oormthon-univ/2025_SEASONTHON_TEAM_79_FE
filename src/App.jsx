@@ -6,11 +6,18 @@ import Signup from "./auth/SignUpPage/SignUpPage";
 import FindPassword from "./auth/FindPasswordPage/FindPasswordPage";
 import Map from "./Map/MapBrowseExact";
 import ListingPage from "./Map/ListingExact";
+import MainPage from "./mainpage/MainPage";
+import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
+
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/login" replace />} />
+
+        <Route path="/" element={<MainPage />} />
+        <Route path="/checklist" element={<ChecklistPage />} />
+
 
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
