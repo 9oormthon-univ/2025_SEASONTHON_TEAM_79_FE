@@ -59,6 +59,7 @@ const LogoutButton = styled.button`
   opacity: 1;
   padding-right: 16px;
   background-color: transparent;
+  cursor: pointer;
 
   font-weight: 700;
   font-size: 16px;
