@@ -1,5 +1,5 @@
 // ListingExact.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -17,85 +17,88 @@ const C = {
 const R = { card: 16, img: 12, chip: 999, seg: 999 };
 const S = { gap: 12, padX: 16, headerH: 56, fab: 56 };
 
+/** ✅ 위치 라벨 하드코딩: 북가좌 2동 */
+const LOCATION_LABEL = "서울 서대문구 북가좌 2동";
+
 /** ===== 더미 데이터 ===== */
 const DUMMY = [
-  { id: "cc-01", title: "센텀힐스테이트", addr: "대구시 수성구 범어동", area: 112, manage: "10만원", deal: "전세 1억", rating: 4.8, image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop" },
-  { id: "cc-02", title: "롯데캐슬", addr: "서울시 강남구 도곡동", area: 33,  manage: "5만원",  deal: "월세 300/84", rating: 4.8, image: "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200&auto=format&fit=crop" },
-  { id: "cc-03", title: "위례자이", addr: "경기도 성남시 분당구 정자동", area: 95, manage: "5만원", deal: "월세 1000/55", rating: 4.8, image: "https://images.unsplash.com/photo-1495435229349-e86db7bfa013?q=80&w=1200&auto=format&fit=crop" },
-  { id: "cc-04", title: "삼성쉐르빌", addr: "서울시 영등포구 여의도동", area: 45, manage: "6만원", deal: "월세 120/80", rating: 4.7, image: "https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1200&auto=format&fit=crop" },
+  {
+    id: "cc-01",
+    title: "가재울아이파크 3단지",
+    addr: "서울 서대문구 남가좌동",
+    area: 59,
+    manage: "7만원",
+    deal: "전세 3억 2천",
+    rating: 4.8,
+    image:
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "cc-02",
+    title: "DMC 파크뷰자이",
+    addr: "서울 서대문구 북가좌동",
+    area: 84,
+    manage: "8만원",
+    deal: "월세 3000/120",
+    rating: 4.8,
+    image:
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "cc-03",
+    title: "래미안 e편한세상 가재울",
+    addr: "서울 서대문구 남가좌동 가재울뉴타운",
+    area: 75,
+    manage: "6만원",
+    deal: "월세 1000/65",
+    rating: 4.8,
+    image:
+      "https://images.unsplash.com/photo-1495435229349-e86db7bfa013?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "cc-04",
+    title: "홍은 래미안 에코포레",
+    addr: "서울 서대문구 홍은동",
+    area: 59,
+    manage: "6만원",
+    deal: "전세 4억 5천",
+    rating: 4.7,
+    image:
+      "https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1200&auto=format&fit=crop",
+  },
 ];
 
 /** ===== 메인 컴포넌트 ===== */
 export default function ListingExact() {
   const [q, setQ] = useState("");
   const [wish, setWish] = useState(() => new Set());
-  const [locationLabel, setLocationLabel] = useState("내 위치 확인 중…");
-  const geocoderRef = useRef(null);
 
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isList = pathname === "/listingpage";
   const isMap  = pathname === "/map";
 
-  // 현재 위치 → 행정동 라벨
-  useEffect(() => {
-    const KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
-
-    const setLabelFromLL = (lat, lng) => {
-      const { kakao } = window;
-      const geocoder = geocoderRef.current || new kakao.maps.services.Geocoder();
-      geocoderRef.current = geocoder;
-      geocoder.coord2RegionCode(
-        lng, lat,
-        (result, status) => {
-          if (status !== kakao.maps.services.Status.OK || !result?.length) {
-            setLocationLabel("현재 위치");
-            return;
-          }
-          const r = result.find((x) => x.region_type === "H") || result[0];
-          setLocationLabel(`${r.region_1depth_name} ${r.region_2depth_name} ${r.region_3depth_name}`);
-        }
-      );
-    };
-
-    const locate = () => {
-      if (!("geolocation" in navigator)) { setLocationLabel("위치 지원 안됨"); return; }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setLabelFromLL(pos.coords.latitude, pos.coords.longitude),
-        (err) => {
-          setLocationLabel(
-            err.code === err.PERMISSION_DENIED ? "위치 권한 필요" :
-            err.code === err.POSITION_UNAVAILABLE ? "위치 불가" : "위치 오류"
-          );
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    };
-
-    const init = () => locate();
-
-    if (window.kakao?.maps?.services) init();
-    else {
-      const s = document.createElement("script");
-      s.id = "kakao-services";
-      s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KEY}&autoload=false&libraries=services`;
-      s.async = true;
-      s.onload = () => window.kakao.maps.load(init);
-      s.onerror = () => setLocationLabel("카카오 SDK 로드 실패");
-      document.head.appendChild(s);
-    }
-  }, []);
-
   const filtered = useMemo(() => {
     const kw = q.trim();
     if (!kw) return DUMMY;
-    return DUMMY.filter((x) => x.title.includes(kw) || x.addr.includes(kw) || x.deal.includes(kw));
+    return DUMMY.filter(
+      (x) => x.title.includes(kw) || x.addr.includes(kw) || x.deal.includes(kw)
+    );
   }, [q]);
 
   const toggleWish = (id) => {
     const n = new Set(wish);
     n.has(id) ? n.delete(id) : n.add(id);
     setWish(n);
+  };
+
+  // ✅ 두 번째 카드만 상세페이지로 이동
+  const handleCardClick = (it) => {
+    if (it.id === "cc-02") {
+      // 필요하면 state로 데이터 전달 가능:
+      // navigate("/homedetailpage", { state: { item: it } });
+      navigate("/homedetailpage");
+    }
   };
 
   return (
@@ -115,7 +118,7 @@ export default function ListingExact() {
       <Section>
         <HeaderRow>
           <div>
-            <LocTitle>{locationLabel}</LocTitle>
+            <LocTitle>{LOCATION_LABEL}</LocTitle>
             <LocSub>
               평균 평점 <StarIcon /> <b>4.8</b>
             </LocSub>
@@ -138,29 +141,45 @@ export default function ListingExact() {
       {/* 검색 */}
       <Search>
         <SearchIcon />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="지역, 대학, 건물 등" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="지역, 대학, 건물 등"
+        />
       </Search>
 
       {/* 리스트 */}
       <List>
-        {filtered.map((it) => (
-          <Card key={it.id}>
-            <Thumb style={{ backgroundImage: `url(${it.image})` }} />
-            <Info>
-              <Addr>{it.addr}</Addr>
-              <Name>{it.title}</Name>
-              <RatingRow><SmallStar /> <span>4.8</span></RatingRow>
-              <Meta>{it.area}m² · 관리비 {it.manage}</Meta>
-              <Deal>{it.deal}</Deal>
-            </Info>
-            <WishBtn aria-label="wish" onClick={() => toggleWish(it.id)} $on={wish.has(it.id)}>
-              {wish.has(it.id) ? <BookmarkFill /> : <BookmarkOutline />}
-            </WishBtn>
-          </Card>
-        ))}
+        {filtered.map((it) => {
+          const clickable = it.id === "cc-02";
+          return (
+            <Card
+              key={it.id}
+              onClick={() => handleCardClick(it)}
+              $clickable={clickable}
+              title={clickable ? "상세보기로 이동" : undefined}
+            >
+              <Thumb style={{ backgroundImage: `url(${it.image})` }} />
+              <Info>
+                <Addr>{it.addr}</Addr>
+                <Name>{it.title}</Name>
+                <RatingRow><SmallStar /> <span>4.8</span></RatingRow>
+                <Meta>{it.area}m² · 관리비 {it.manage}</Meta>
+                <Deal>{it.deal}</Deal>
+              </Info>
+              <WishBtn
+                aria-label="wish"
+                onClick={(e) => { e.stopPropagation(); toggleWish(it.id); }}
+                $on={wish.has(it.id)}
+              >
+                {wish.has(it.id) ? <BookmarkFill /> : <BookmarkOutline />}
+              </WishBtn>
+            </Card>
+          );
+        })}
       </List>
 
-      {/* 플로팅 + 버튼(유지) */}
+      {/* 플로팅 + 버튼 */}
       <Fab>＋</Fab>
     </Wrap>
   );
@@ -171,7 +190,7 @@ const Wrap = styled.div`
   min-height: 100dvh;
   background: ${C.bg};
   color: ${C.text};
-  padding-bottom: 20px; /* ✅ 풋터 삭제에 맞춰 여백 축소 */
+  padding-bottom: 20px;
 `;
 
 const TopBar = styled.header`
@@ -216,6 +235,7 @@ const List = styled.div`display:grid; gap:${S.gap}px; padding:8px ${S.padX}px 12
 const Card = styled.article`
   display:grid; grid-template-columns:112px 1fr 28px; gap:12px; padding:10px;
   background:#fff; border:1px solid #EEF1F6; border-radius:${R.card}px; box-shadow:0 2px 8px rgba(0,0,0,.04);
+  cursor: ${(p) => (p.$clickable ? "pointer" : "default")};
 `;
 const Thumb = styled.div`width:112px; height:96px; border-radius:${R.img}px; background-size:cover; background-position:center;`;
 const Info = styled.div`display:grid; align-content:start; gap:4px;`;
@@ -225,7 +245,10 @@ const RatingRow = styled.div`display:inline-flex; align-items:center; gap:4px; f
 const Meta = styled.div`font-size:12px; color:${C.sub};`;
 const Deal = styled.div`font-weight:900; margin-top:2px;`;
 
-const WishBtn = styled.button`border:0; background:transparent; cursor:pointer; align-self:start; color:${(p)=>p.$on?C.blue:"#9aa0a6"};`;
+const WishBtn = styled.button`
+  border:0; background:transparent; cursor:pointer; align-self:start;
+  color:${(p)=>p.$on?C.blue:"#9aa0a6"};
+`;
 
 const Fab = styled.button`
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -242,4 +265,3 @@ function StarIcon(props){return(<svg width="14" height="14" viewBox="0 0 24 24" 
 function SmallStar(props){return <StarIcon {...props}/>;}
 function Caret(props){return(<svg width="14" height="14" viewBox="0 0 24 24" {...props}><path d="M7 10l5 5 5-5" fill="none" stroke="#7B8496" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);}
 function SearchIcon(props){return(<svg width="18" height="18" viewBox="0 0 24 24" {...props}><circle cx="11" cy="11" r="7" stroke="#9AA0A6" strokeWidth="2" fill="none"/><path d="M21 21l-4.3-4.3" stroke="#9AA0A6" strokeWidth="2" strokeLinecap="round"/></svg>);}
-function HomeIcon(){return(<svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2V10z" fill="currentColor"/></svg>);}

@@ -7,20 +7,23 @@ import FindPassword from "./auth/FindPasswordPage/FindPasswordPage";
 import Map from "./Map/MapBrowseExact";
 import ListingPage from "./Map/ListingExact";
 import MainPage from "./mainpage/MainPage";
-//import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
+import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
 import LeaseChecklistPage from "./user/LeaseChecklistPage/LeaseChecklistPage";
 import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
+import UserRecordPage from "./user/HomeDetailPage/UserRecordPage";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/" replace />} />
+        <Route index element={<MainPage />} />
+        <Route path="/" element={<MainPage />} />
 
         
-        {/*<Route path="/checklist" element={<ChecklistPage />} />*/}
+        <Route path="/checklist" element={<ChecklistPage />} />
+        <Route path="/userrecord" element={<UserRecordPage />} />
 
-        <Route path="/" element={<MainPage />} />
+
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="find-id" element={<FindId />} />

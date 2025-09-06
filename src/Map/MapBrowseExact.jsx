@@ -7,12 +7,11 @@ export default function MapBrowseExact() {
   const mapRef = useRef(null);
   const myMarkerRef = useRef(null);
   const clustererRef = useRef(null);
-  const placesRef = useRef(null);
   const geocoderRef = useRef(null);
   const currentInfoRef = useRef(null); // { iw, marker }
 
-  const [status, setStatus] = useState("");
-  const [locationLabel, setLocationLabel] = useState("경기 파주시 동패동");
+  const [status, setStatus] = useState("명지전문대 기준으로 표시");
+  const [locationLabel, setLocationLabel] = useState("명지전문대 인근");
   const [chips] = useState(["아파트", "방크기", "거래유형/가격"]);
 
   const navigate = useNavigate();
@@ -20,15 +19,16 @@ export default function MapBrowseExact() {
   const isList = pathname === "/listingpage";
   const isMap  = pathname === "/map";
 
-  // 더미 방
-  const USE_DUMMY = true;
+  // ✅ 명지전문대 좌표(서대문구 남가좌동 일대) — 하드코딩
+  // 필요시 정확 좌표로 수정하세요.
+  const MJC = { lat: 37.5828, lng: 126.9114 };
+
+  // 더미 방(명지전문대 인근)
   const DUMMIES = [
-    { name: "한림대 도보 5분 원룸", type: "원룸", price: "월 45", off: [0.003, 0.0015] },
-    { name: "명동 CGV 근처 투룸", type: "투룸", price: "월 62", off: [-0.0025, 0.0009] },
-    { name: "춘천역 앞 오피스텔", type: "오피스텔", price: "월 75", off: [0.0016, -0.0022] },
-    { name: "소양강 스카이워크 뷰", type: "원룸", price: "월 55", off: [-0.0011, -0.0026] },
-    { name: "강대병원 근처 신축", type: "투룸", price: "월 70", off: [0.0006, 0.0032] },
-    { name: "남춘천역 초근접", type: "원룸", price: "월 58", off: [0.0022, 0.0005] },
+    { name: "가재울아이파크 3단지",   type: "아파트",  price: "전세 3억 2천",  off: [ 0.0018, -0.0012] },
+    { name: "DMC 파크뷰자이",         type: "아파트",  price: "월세 3000/120", off: [-0.0016,  0.0010] },
+    { name: "래미안 e편한세상 가재울", type: "아파트",  price: "월세 1000/65",  off: [ 0.0022,  0.0006] },
+    { name: "홍은 래미안 에코포레",   type: "아파트",  price: "전세 4억 5천",  off: [-0.0020, -0.0008] },
   ];
 
   /* ───────── utils ───────── */
@@ -66,22 +66,6 @@ export default function MapBrowseExact() {
     );
   };
 
-  const locate = (onOk) => {
-    if (!("geolocation" in navigator)) { setStatus("이 브라우저는 위치를 지원하지 않아요."); return; }
-    setStatus("내 위치 확인 중…");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => onOk(pos.coords.latitude, pos.coords.longitude),
-      (err) => {
-        setStatus(
-          err.code === err.PERMISSION_DENIED ? "위치 권한 거부됨" :
-          err.code === err.POSITION_UNAVAILABLE ? "위치 정보를 사용할 수 없어요." :
-          err.code === err.TIMEOUT ? "위치 요청 시간 초과" : "알 수 없는 위치 오류"
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  };
-
   const showDummiesAround = (centerLL) => {
     const { kakao } = window;
     const map = mapRef.current;
@@ -111,126 +95,92 @@ export default function MapBrowseExact() {
     clusterer.addMarkers(markers);
   };
 
-  /* ───────── Kakao SDK ───────── */
+  const initMapAtMJC = () => {
+    const { kakao } = window;
+    const centerLL = new kakao.maps.LatLng(MJC.lat, MJC.lng);
+
+    const map = new kakao.maps.Map(mapEl.current, { center: centerLL, level: 5 });
+    mapRef.current = map;
+
+    geocoderRef.current  = new kakao.maps.services.Geocoder();
+    clustererRef.current = new kakao.maps.MarkerClusterer({
+      map, averageCenter: true, minLevel: 6
+    });
+
+    const my = new kakao.maps.Marker({
+      map, position: centerLL,
+      image: new kakao.maps.MarkerImage(
+        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+        new kakao.maps.Size(24, 35)
+      ),
+    });
+    myMarkerRef.current = my;
+
+    updateLabelFromLatLng(centerLL);
+    showDummiesAround(centerLL);
+
+    kakao.maps.event.addListener(map, "idle", () => updateLabelFromLatLng(map.getCenter()));
+    kakao.maps.event.addListener(map, "click", () => closeInfo());
+
+    setStatus("명지전문대 기준으로 고정됨");
+  };
+
+  const moveToMJC = () => {
+    const { kakao } = window;
+    const ll = new kakao.maps.LatLng(MJC.lat, MJC.lng);
+    const map = mapRef.current, my = myMarkerRef.current;
+    if (!map || !my) return;
+    my.setPosition(ll);
+    map.panTo(ll);
+    updateLabelFromLatLng(ll);
+    showDummiesAround(ll);
+    setStatus("명지전문대 위치로 이동");
+  };
+
+  /* ───────── Kakao SDK 로드 + 초기화(명지전문대 고정) ───────── */
   useEffect(() => {
     const KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
     if (!KEY) { setStatus(".env의 VITE_KAKAO_MAP_KEY가 없습니다."); return; }
 
-    const init = () => {
-      const { kakao } = window;
-      const center = new kakao.maps.LatLng(37.5665, 126.9780);
-      const map = new kakao.maps.Map(mapEl.current, { center, level: 5 });
-      mapRef.current = map;
+    const start = () => initMapAtMJC();
 
-      geocoderRef.current = new kakao.maps.services.Geocoder();
-      placesRef.current = new kakao.maps.services.Places();
-      clustererRef.current = new kakao.maps.MarkerClusterer({ map, averageCenter: true, minLevel: 6 });
-
-      const my = new kakao.maps.Marker({
-        map, position: center,
-        image: new kakao.maps.MarkerImage(
-          "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-          new kakao.maps.Size(24, 35)
-        ),
-      });
-      myMarkerRef.current = my;
-
-      locate((lat, lng) => {
-        const ll = new kakao.maps.LatLng(lat, lng);
-        my.setPosition(ll);
-        map.setCenter(ll);
-        updateLabelFromLatLng(ll);
-        if (USE_DUMMY) showDummiesAround(ll);
-      });
-
-      kakao.maps.event.addListener(map, "idle", () => updateLabelFromLatLng(map.getCenter()));
-      kakao.maps.event.addListener(map, "click", () => closeInfo());
-
-      setStatus("지도 로드 완료");
-    };
-
-    if (window.kakao?.maps) window.kakao.maps.load(init);
-    else {
+    if (window.kakao?.maps) {
+      window.kakao.maps.load(start);
+    } else {
       const s = document.createElement("script");
       s.id = "kakao-sdk";
       s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KEY}&autoload=false&libraries=services,clusterer`;
-      s.async = true; s.onload = () => window.kakao.maps.load(init);
+      s.async = true;
+      s.onload = () => window.kakao.maps.load(start);
       s.onerror = () => setStatus("SDK 로드 실패(키/도메인 확인)");
       document.head.appendChild(s);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ───────── controls ───────── */
-  const zoomIn = () => {
-    const m = mapRef.current;
-    if (m) m.setLevel(m.getLevel() - 1);
-  };
-  const zoomOut = () => {
-    const m = mapRef.current;
-    if (m) m.setLevel(m.getLevel() + 1);
-  };
-  const goMy = () => {
-    const { kakao } = window;
-    const map = mapRef.current, my = myMarkerRef.current;
-    if (!map || !my) return;
-    locate((lat, lng) => {
-      const ll = new kakao.maps.LatLng(lat, lng);
-      my.setPosition(ll);
-      map.panTo(ll);
-      updateLabelFromLatLng(ll);
-      if (USE_DUMMY) showDummiesAround(ll);
-    });
-  };
+  const zoomIn = () => { const m = mapRef.current; if (m) m.setLevel(m.getLevel() - 1); };
+  const zoomOut = () => { const m = mapRef.current; if (m) m.setLevel(m.getLevel() + 1); };
 
   /* ───────── styles ───────── */
-  const segWrap = {
-    display: "inline-flex",
-    gap: 6,
-    background: "#F1F3F5",
-    padding: 2,
-    borderRadius: 999,
-  };
+  const segWrap = { display: "inline-flex", gap: 6, background: "#F1F3F5", padding: 2, borderRadius: 999 };
   const segBtn = (active) => ({
     border: active ? "1px solid #4C8DFF" : "1px solid transparent",
     background: active ? "#FFFFFF" : "transparent",
     color: active ? "#2F5BFF" : "#8A94A6",
     padding: "4px 12px",
-    height: 26,
-    minWidth: 40,
-    whiteSpace: "nowrap",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    lineHeight: "16px",
-    letterSpacing: "-0.2px",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
+    height: 26, minWidth: 40, whiteSpace: "nowrap", borderRadius: 999,
+    fontSize: 12, fontWeight: 700, lineHeight: "16px", letterSpacing: "-0.2px",
+    cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
   });
-
   const chipStyle = {
-    border: "1px solid #E6EBF3",
-    background: "#FFFFFF",
-    color: "#0F172A",
-    borderRadius: 999,
-    padding: "9px 11px",
-    fontSize: 12,
-    fontWeight: 700,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    whiteSpace: "nowrap",
+    border: "1px solid #E6EBF3", background: "#FFFFFF", color: "#0F172A",
+    borderRadius: 999, padding: "9px 11px", fontSize: 12, fontWeight: 700,
+    display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
   };
-
   const ctrlBtn = {
-    width: 40, height: 40,
-    borderRadius: 12,
-    border: "1px solid #E7EDF5",
-    background: "#fff",
-    fontSize: 18,
-    boxShadow: "0 2px 8px rgba(0,0,0,.08)",
-    cursor: "pointer",
+    width: 40, height: 40, borderRadius: 12, border: "1px solid #E7EDF5",
+    background: "#fff", fontSize: 18, boxShadow: "0 2px 8px rgba(0,0,0,.08)", cursor: "pointer",
   };
 
   /* ───────── render ───────── */
@@ -257,15 +207,11 @@ export default function MapBrowseExact() {
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.2px" }}>{locationLabel}</div>
           </div>
-
-          {/* ✅ 현재 경로에 따라 활성 스타일 자동 반영 */}
           <div style={segWrap}>
             <button onClick={() => navigate("/listingpage")} style={segBtn(isList)}>목록</button>
             <button onClick={() => navigate("/map")}          style={segBtn(isMap)}>지도</button>
           </div>
         </div>
-
-        {/* 칩 */}
         <div style={{ display: "flex", gap: 8, padding: "10px 16px 10px 16px", overflowX: "auto" }}>
           {chips.map((c) => (
             <button key={c} style={chipStyle}>
@@ -281,13 +227,13 @@ export default function MapBrowseExact() {
 
       {/* 우측 컨트롤 */}
       <div style={{ position: "absolute", right: 12, bottom: 120, display: "grid", gap: 8, zIndex: 15 }}>
-        <button onClick={zoomIn} style={ctrlBtn}>＋</button>
+        <button onClick={zoomIn}  style={ctrlBtn}>＋</button>
         <button onClick={zoomOut} style={ctrlBtn}>－</button>
-        <button onClick={goMy} style={ctrlBtn}>◎</button>
+        {/* ✅ '현위치' 대신 명지전문대 중심으로 이동 */}
+        <button onClick={moveToMJC} style={ctrlBtn}>◎</button>
         <button style={ctrlBtn}>🗺️</button>
       </div>
 
-     
       {/* 상태표시 */}
       <div style={{ position: "absolute", left: 12, bottom: 20, fontSize: 12, color: "#6B7280" }}>{status}</div>
     </div>
