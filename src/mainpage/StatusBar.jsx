@@ -15,8 +15,6 @@ const StatusBarContainer = styled.div`
   opacity: 1;
   background-color : #FFFFFF;
 
-  /* 프로덕션에서는 숨김 */
-  ${process.env.NODE_ENV === "production" && "display: none;"}
 `;
 
 const TimeDisplay = styled.div`

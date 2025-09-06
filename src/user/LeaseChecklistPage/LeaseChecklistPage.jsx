@@ -1,7 +1,7 @@
 // LeaseChecklistPage.jsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-
+import { NavLink } from "react-router-dom";
 /* 디자인 토큰 */
 const C = { bg:"#fff", line:"#E7EDF5", soft:"#F8FAFF", text:"#0F172A", sub:"#6B7280", blue:"#4C8DFF", overlay:"rgba(14,18,27,.5)" };
 const R = { img:12, card:12, pill:999 };
@@ -74,7 +74,6 @@ const DEFAULT_PHOTO =
   "https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?q=80&w=1600&auto=format&fit=crop";
 
 export default function LeaseChecklistPage() {
-  const [tab, setTab] = useState("check");
   const [enabled, setEnabled] = useState(true);
   const [contract, setContract] = useState("monthly");
   const [openIds, setOpenIds] = useState(() => new Set());
@@ -149,20 +148,13 @@ export default function LeaseChecklistPage() {
       </Section>
 
       <Tabs>
-        <TabButton $active={tab==="detail"} onClick={()=>setTab("detail")}>상세보기</TabButton>
-        <TabButton $active={tab==="check"}  onClick={()=>setTab("check")}>집 계약 체크리스트</TabButton>
+        <TabLink to="/homedetailpage" end>상세보기</TabLink>
+        <TabLink to="/leasechecklistpage">집 계약 체크리스트</TabLink>
       </Tabs>
 
       <Card>
         <CardHead>
           <HeadLeft><TipIcon/><HeadTitle>살펴야 할 사항</HeadTitle></HeadLeft>
-          <HeadRight>
-            <Segment>
-              <SegBtn $active={contract==="monthly"} onClick={()=>setContract("monthly")}>월세</SegBtn>
-              <SegBtn $active={contract==="jeonse"}  onClick={()=>setContract("jeonse")}>전세</SegBtn>
-            </Segment>
-            <Switch role="switch" aria-checked={enabled} $on={enabled} onClick={()=>setEnabled(v=>!v)}><span/></Switch>
-          </HeadRight>
         </CardHead>
 
         <List>
@@ -255,49 +247,35 @@ const Hero = styled.img`width:100%;aspect-ratio:16/10;object-fit:cover;display:b
 
 const Tabs = styled.div`
   display:grid;grid-template-columns:1fr 1fr;
-  padding:10px ${S.padX}px 0;border-bottom:1px solid ${C.line};
+  padding:10px ${S.padX}px 0;
+  margin-top:3%;
 `;
-const TabButton = styled.button`
-  border:0;background:transparent;padding:10px 0;font-weight:700;color:${p=>p.$active?C.blue:C.sub};
-  position:relative;cursor:pointer;
-  &:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:${p=>p.$active?C.blue:"transparent"};border-radius:2px;}
-`;
+const TabLink = styled(NavLink)`
+  display: block;
+  text-align: center;
+  padding: 10px 0;
+  font-weight: 700;
+  color: ${C.sub};
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
 
+  /* 활성 탭 스타일 */
+  &.active {
+    color: ${C.blue};
+  }
+  &.active::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px; border-radius: 2px;
+    background: ${C.blue};
+  }
+`;
 const Card = styled.section`margin:12px ${S.padX}px; padding:12px; background:#fff; border:1px solid ${C.line}; border-radius:${R.card}px;`;
 const CardHead = styled.div`display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;`;
 const HeadLeft = styled.div`display:inline-flex;align-items:center;gap:8px;`;
-const HeadRight = styled.div`display:flex;align-items:center;gap:10px;`;
 const HeadTitle = styled.b`font-weight:800;letter-spacing:-0.2px;`;
-
-const Segment = styled.div`
-  display:inline-grid;grid-template-columns:1fr 1fr;background:${C.soft};
-  border:1px solid ${C.line};border-radius:${R.pill};padding:2px;overflow:hidden;
-`;
-const SegBtn = styled.button`
-  appearance:none;border:0;margin:0;height:32px;padding:0 14px;
-  background:${p=>p.$active?"#fff":"transparent"};
-  color:${p=>p.$active?C.text:C.sub};font-weight:${p=>p.$active?800:700};
-  cursor:pointer;transition:background .15s,color .15s;
-  &:first-child{border-radius:${R.pill} 0 0 ${R.pill};}
-  &:last-child{border-radius:0 ${R.pill} ${R.pill} 0;}
-`;
-
-/* 🔵 파란 pill 스위치 */
-const Switch = styled.button`
-  width:64px;height:32px;padding:0 4px;border-radius:999px;
-  border:2px solid ${C.blue};
-  background:${p=>p.$on?C.blue:"#fff"};
-  display:inline-flex;align-items:center;cursor:pointer;
-  transition:background .2s ease,border-color .2s ease;
-
-  span{
-    width:26px;height:26px;border-radius:999px;background:#fff;
-    border:${p=>p.$on?"0":`2px solid ${C.blue}`};
-    transform:translateX(${p=>p.$on?"28px":"0"});
-    transition:transform .2s ease,border .2s ease,box-shadow .2s ease;
-    box-shadow:0 1px 2px rgba(0,0,0,.15);
-  }
-`;
 
 const List = styled.ul`list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;`;
 const GroupLabel = styled.li`margin:10px 2px 2px;font-size:12px;font-weight:800;color:${C.sub};`;

@@ -9,17 +9,18 @@ import ListingPage from "./Map/ListingExact";
 import MainPage from "./mainpage/MainPage";
 //import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
 import LeaseChecklistPage from "./user/LeaseChecklistPage/LeaseChecklistPage";
+import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/login" replace />} />
+        <Route index element={<Navigate to="/" replace />} />
 
-        <Route path="/" element={<MainPage />} />
+        
         {/*<Route path="/checklist" element={<ChecklistPage />} />*/}
 
-
+        <Route path="/" element={<MainPage />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="find-id" element={<FindId />} />
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="map" element={<Map/>}/>
         <Route path="listingpage" element={<ListingPage/>}/>
         <Route path="leasechecklistpage" element={<LeaseChecklistPage/>}/>
+        <Route path="homedetailpage" element={<HomeDetailPage/>}/>
       </Route>
     </Routes>
   );

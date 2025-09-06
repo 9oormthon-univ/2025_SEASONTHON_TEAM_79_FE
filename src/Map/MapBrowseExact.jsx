@@ -287,19 +287,7 @@ export default function MapBrowseExact() {
         <button style={ctrlBtn}>🗺️</button>
       </div>
 
-      {/* 하단 CTA */}
-      <button
-        style={{
-          position: "absolute", left: "50%", bottom: 20, transform: "translateX(-50%)",
-          width: 320, maxWidth: "calc(100% - 32px)", height: 56,
-          background: "#4C8DFF", color: "#fff", fontWeight: 800, fontSize: 16,
-          border: "none", borderRadius: 16, boxShadow: "0 10px 20px rgba(76,141,255,.35)", cursor: "pointer", zIndex: 15
-        }}
-        onClick={() => alert("나의 목록 10")}
-      >
-        나의 목록 10
-      </button>
-
+     
       {/* 상태표시 */}
       <div style={{ position: "absolute", left: 12, bottom: 20, fontSize: 12, color: "#6B7280" }}>{status}</div>
     </div>
