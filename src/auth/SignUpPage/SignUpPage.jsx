@@ -1,8 +1,9 @@
-// src/pages/Signup.jsx
 import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { signup, sendEmailCode, verifyEmailCode } from "../../apis/auth"; // ✅ API 불러오기
 
+// ===== 스타일 상수 =====
 const SHELL_MAX_WIDTH = 715;
 const HEADER_H = 56;
 const TOP_GAP = 16;
@@ -22,6 +23,7 @@ const C = {
   grayBtnText: "#FFFFFF",
 };
 
+// ===== 스타일 컴포넌트 =====
 const Wrap = styled.div`
   display: flex;
   flex-direction: column;
@@ -29,17 +31,14 @@ const Wrap = styled.div`
   background: ${C.bg};
   overflow-x: hidden;
 `;
-
-/* 공통 폭 컨테이너 */
 const Shell = styled.div`
   width: 100%;
   max-width: ${SHELL_MAX_WIDTH}px;
   margin: 0 auto;
   box-sizing: border-box;
 `;
-
 const Header = styled.header`
-  position: fixed; /* 고정 */
+  position: fixed;
   top: env(safe-area-inset-top, 0);
   left: 0;
   right: 0;
@@ -50,7 +49,6 @@ const Header = styled.header`
   display: flex;
   justify-content: center;
 `;
-
 const HeaderInner = styled(Shell)`
   display: flex;
   align-items: center;
@@ -59,7 +57,6 @@ const HeaderInner = styled(Shell)`
   position: relative;
   padding: 0 12px;
 `;
-
 const BackBtn = styled.button`
   position: absolute;
   left: 12px;
@@ -71,51 +68,41 @@ const BackBtn = styled.button`
   line-height: 1;
   cursor: pointer;
 `;
-
 const Title = styled.h1`
   margin: 0;
   font-size: 18px;
   font-weight: 700;
   color: ${C.text};
 `;
-
 const Body = styled.main`
   flex: 1;
-  /* 헤더에 가려지지 않도록 상단 여백 확보 */
   margin-top: ${HEADER_H}px;
   padding: ${TOP_GAP}px 20px calc(24px + env(safe-area-inset-bottom, 0));
 `;
-
 const BodyInner = styled(Shell)`
   min-height: calc(${BASE_H}px - ${HEADER_H}px - ${TOP_GAP}px);
 `;
-
 const FormWrap = styled.form`
   display: flex;
   flex-direction: column;
   min-height: 100%;
 `;
-
 const Fields = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* 헤더와 첫 라벨(이메일) 사이 간격 */
   margin-top: 12px;
 `;
-
 const Group = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 const Label = styled.label`
   font-size: 13px;
   font-weight: 700;
   color: ${C.label};
   margin-bottom: 6px;
 `;
-
 const Field = styled.div`
   display: flex;
   align-items: center;
@@ -131,7 +118,6 @@ const Field = styled.div`
       0 0 0 2px rgba(107, 140, 255, 0.14);
   }
 `;
-
 const Input = styled.input`
   flex: 1;
   height: 46px;
@@ -139,14 +125,10 @@ const Input = styled.input`
   outline: 0;
   font-size: 14px;
   background: transparent;
-  ::placeholder { color: ${C.placeholder}; }
-  &:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
-    -webkit-text-fill-color: ${C.text} !important;
-    caret-color: ${C.text};
+  ::placeholder {
+    color: ${C.placeholder};
   }
 `;
-
 const SuffixBtn = styled.button`
   flex: 0 0 auto;
   height: 40px;
@@ -160,17 +142,12 @@ const SuffixBtn = styled.button`
   color: ${(p) => (p.variant === "primary" ? "#fff" : C.grayBtnText)};
   opacity: ${(p) => (p.disabled ? 0.5 : 1)};
 `;
-
 const Hint = styled.p`
   margin: 4px 2px 0;
   font-size: 12px;
   color: ${(p) => (p.variant === "danger" ? C.danger : C.subtle)};
 `;
-
-const Spacer = styled.div`
-  flex: 1;
-`;
-
+const Spacer = styled.div` flex: 1; `;
 const Row = styled.div`
   display: flex;
   justify-content: center;
@@ -179,17 +156,12 @@ const Row = styled.div`
   font-size: 14px;
   margin: 20px 0;
 `;
-
 const LinkStrong = styled(Link)`
   color: ${C.focus};
   text-decoration: none;
   font-weight: 700;
 `;
-
-const SubmitWrap = styled.div`
-  padding: 8px 0 16px;
-`;
-
+const SubmitWrap = styled.div` padding: 8px 0 16px; `;
 const Submit = styled.button`
   width: 100%;
   height: 58px;
@@ -203,50 +175,79 @@ const Submit = styled.button`
   opacity: ${(p) => (p.disabled ? 0.5 : 1)};
 `;
 
+// ===== 컴포넌트 =====
 export default function Signup() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [pw, setPw] = useState("");
+  const [password, setPassword] = useState("");
   const [pw2, setPw2] = useState("");
   const [name, setName] = useState("");
-  const [region, setRegion] = useState(""); // 집을 보는 지역 (필수)
   const [sent, setSent] = useState(false);
   const [verified, setVerified] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [err, setErr] = useState("");
 
+  // ✅ 유효성 검사
   const emailOk = useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
-  const pwOk = useMemo(() => /[A-Za-z]/.test(pw) && /\d/.test(pw) && pw.length >= 8, [pw]);
-  const pwMatch = pw.length > 0 && pw === pw2;
+  const pwOk = useMemo(() => /[A-Za-z]/.test(password) && /\d/.test(password) && password.length >= 8, [password]);
+  const pwMatch = password.length > 0 && password === pw2;
   const nameOk = name.trim().length > 0;
-  const regionOk = region.trim().length > 0;
+  const canSubmit = emailOk && verified && pwOk && pwMatch && nameOk;
 
+  // ✅ 타이머
   useEffect(() => {
     if (!timer) return;
     const id = setInterval(() => setTimer((t) => Math.max(0, t - 1)), 1000);
     return () => clearInterval(id);
   }, [timer]);
 
-  const onSend = () => {
+  // ✅ 인증코드 전송
+  const onSend = async () => {
     if (!emailOk) return;
-    setSent(true);
-    setVerified(false);
-    setTimer(180);
+    try {
+      await sendEmailCode(email);
+      alert("인증번호가 이메일로 전송되었습니다.");
+      setSent(true);
+      setVerified(false);
+      setTimer(180);
+    } catch (e) {
+      console.error("인증번호 전송 실패:", e);
+      alert(e?.response?.data?.message ?? "인증번호 전송 실패");
+    }
   };
 
-  const onVerify = () => {
+  // ✅ 인증코드 검증
+  const onVerify = async () => {
     if (!sent) return;
-    setVerified(code.trim().length > 0);
+    try {
+      await verifyEmailCode({ email, code });
+      setVerified(true);
+      alert("이메일 인증이 완료되었습니다.");
+    } catch (e) {
+      console.error("인증번호 검증 실패:", e);
+      setVerified(false);
+      alert(e?.response?.data?.message ?? "인증번호 검증 실패");
+    }
   };
 
-  const canSubmit = emailOk && verified && pwOk && pwMatch && nameOk && regionOk;
-
-  const onSubmit = (e) => {
+  // ✅ 회원가입
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit) return;
-    nav("/welcome");
+    setErr("");
+
+    try {
+      await signup({ email, password, name });
+      alert("회원가입이 완료되었습니다!");
+      nav("/login");
+    } catch (e) {
+      console.error("회원가입 실패:", e);
+      setErr(e?.response?.data?.message ?? "회원가입 실패");
+    }
   };
 
+  // 타이머 표시 mm:ss
   const mmss = useMemo(() => {
     const m = String(Math.floor(timer / 60)).padStart(1, "0");
     const s = String(timer % 60).padStart(2, "0");
@@ -321,8 +322,8 @@ export default function Signup() {
                     id="pw"
                     type="password"
                     placeholder="비밀번호를 입력해주세요"
-                    value={pw}
-                    onChange={(e) => setPw(e.target.value)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
                   />
                 </Field>
@@ -335,16 +336,16 @@ export default function Signup() {
                   <Input
                     id="pw2"
                     type="password"
-                    placeholder="비밀번호를 입력해주세요"
+                    placeholder="비밀번호를 다시 입력해주세요"
                     value={pw2}
                     onChange={(e) => setPw2(e.target.value)}
                     autoComplete="new-password"
                   />
                 </Field>
-                {!pwOk && pw.length > 0 && (
+                {!pwOk && password.length > 0 && (
                   <Hint variant="danger">영문과 숫자를 포함해 8자 이상이어야 해요.</Hint>
                 )}
-                {pw.length > 0 && pw2.length > 0 && !pwMatch && (
+                {password.length > 0 && pw2.length > 0 && !pwMatch && (
                   <Hint variant="danger">비밀번호가 일치하지 않습니다.</Hint>
                 )}
               </Group>
@@ -362,24 +363,10 @@ export default function Signup() {
                   />
                 </Field>
               </Group>
-
-              {/* 집을 보는 지역 (필수) */}
-              <Group>
-                <Label htmlFor="region">집을 보는 지역</Label>
-                <Field>
-                  <Input
-                    id="region"
-                    type="text"
-                    placeholder="예: 서울, 강남구"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                  />
-                </Field>
-                {!regionOk && region.length === 0 && (
-                  <Hint variant="danger">집을 보는 지역을 입력해주세요.</Hint>
-                )}
-              </Group>
             </Fields>
+
+            {/* 에러 메시지 */}
+            {err && <p style={{ color: "crimson", marginTop: "10px" }}>{err}</p>}
 
             <Spacer />
 

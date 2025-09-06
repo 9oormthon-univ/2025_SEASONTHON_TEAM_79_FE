@@ -1,13 +1,13 @@
-// LeaseChecklistPage.jsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+
 /* 디자인 토큰 */
 const C = { bg:"#fff", line:"#E7EDF5", soft:"#F8FAFF", text:"#0F172A", sub:"#6B7280", blue:"#4C8DFF", overlay:"rgba(14,18,27,.5)" };
 const R = { img:12, card:12, pill:999 };
 const S = { headerH:56, padX:16 };
 
-/** ===== 체크리스트 데이터 (전체) ===== */
+/** ===== 체크리스트 데이터 (복구) ===== */
 const COMMON = [
   { id:"c1", title:"최신 등기부등본(등기사항증명서) 확인",
     what:"소유자 성명·주민(사업자)번호 일부, 주소 일치 / 발급일자(당일 또는 잔금일 아침 재확인)",
@@ -19,69 +19,72 @@ const COMMON = [
     what:"주용도(주택/근린 등), 면적·층수, 불법 증축 여부(‘위반건축물’ 표시), 오피스텔이면 주거용 사용 가능 여부",
     why:"불법 증축·용도 위반은 확정일자·보증보험·전입신고 등에서 문제 발생 가능. 추후 강제철거/과태료·분쟁 위험." },
   { id:"c4", title:"시세·안전비율 점검 (깡통전세·과도한 보증금 방지)",
-    what:"주변 실거래/호가, 선순위 채권합계 + 내 보증금 ≤ 주택가액의 80% 이내(보수적으로 70% 권고). 다세대·빌라 신축/갭 큰 매물은 특히 보수적으로 계산.",
-    why:"경매 시 낙찰가가 시세의 80% 내외로 형성되는 일이 많아, 선순위 채권·보증금 합이 높으면 보증금 손실 위험 급증." },
+    what:"주변 실거래/호가, 선순위 채권합계 + 내 보증금 ≤ 주택가액의 80% 이내(보수적으로 70% 권고)",
+    why:"낙찰가가 시세의 80% 내외로 형성되는 일이 많아, 보증금 손실 위험 급증." },
   { id:"c5", title:"중개사무소·중개대상물 확인설명서",
-    what:"개설등록증, 중개사 자격증, 중개대상물 확인·설명서 교부 및 서명(권리관계·관리비·하자·제한사항 포함), 손해배상책임 보장여부(공제/보험)",
-    why:"법정 서류로서 임차인의 고지받은 내용 증거가 됨. 누락·허위 시 분쟁 시 입증자료가 됨." },
+    what:"개설등록증, 중개사 자격증, 확인·설명서 교부 및 서명, 손해배상책임 보장여부 확인",
+    why:"법정 서류로서 임차인의 고지받은 내용 증거가 됨. 누락·허위 시 분쟁 시 입증자료." },
   { id:"c6", title:"당사자·대리권 확인 및 실명 입금",
-    what:"임대인 본인 신분증, 대리인인 경우 위임장·인감증명서 / 계약금·잔금은 임대인 명의 계좌로 송금하고 영수증(이체확인증) 보관",
+    what:"임대인 본인 신분증, 대리인인 경우 위임장·인감증명서 / 임대인 명의 계좌로 송금",
     why:"이중계약·사칭 방지. 현금거래·제3자 계좌 송금은 분쟁 시 불리." },
   { id:"c7", title:"표준계약서 사용 + 필수 특약",
-    what:"국토부 주택임대차 표준계약서 양식 사용. 아래 필수 특약을 추가.",
-    why:"표준양식은 분쟁을 줄이고, 임차인 권리(하자보수·보증금 반환 등) 보호 조항이 체계화되어 있음." },
+    what:"국토부 주택임대차 표준계약서 양식 사용. 필수 특약 추가",
+    why:"표준양식은 분쟁을 줄이고, 임차인 권리 보호 조항이 체계화되어 있음." },
   { id:"c8", title:"공과금·관리비 정산 기준 명시",
-    what:"포함/불포함 항목(공동관리비, 청소·경비·승강기, 인터넷/TV, 주차, 수도·전기·가스 등), 정산 기준일(인도일 24:00), 계량기 검침치 사진 첨부",
-    why:"체납/이월 분쟁 예방. 신규 명의변경, 사용개시 차단 등 실무문제 방지." },
-  { id:"c9", title:"하자(누수·곰팡이·보일러·창호·배관) 점검 기록",
-    what:"입주 전 상태사진·동영상 / 하자 발견 시 수리기한·책임 주체를 특약에 명시",
+    what:"포함/불포함 항목, 정산 기준일, 계량기 검침치 사진 첨부",
+    why:"체납/이월 분쟁 예방. 신규 명의변경 등 실무문제 방지." },
+  { id:"c9", title:"하자 점검 기록",
+    what:"입주 전 상태사진·동영상, 수리기한·책임 주체를 특약에 명시",
     why:"임대인의 수선의무 범위와 원상복구 범위를 명확히 하여 분쟁 예방." },
-  { id:"c10", title:"임대차 신고(30일 이내), 전입신고, 확정일자",
-    what:"계약 체결 후 30일 이내 임대차 신고(온라인 가능, 확정일자 자동부여), 입주 즉시 전입신고 및 확정일자(신고로 대체 가능), 주민센터 처리 내역 보관",
-    why:"전입(점유)으로 대항력 취득, 확정일자로 우선변제권 확보. 신고 지연 시 과태료 가능." },
+  { id:"c10", title:"임대차 신고·전입신고·확정일자",
+    what:"계약 후 30일 이내 임대차 신고, 입주 즉시 전입신고, 확정일자",
+    why:"대항력·우선변제권 확보. 지연 시 과태료 가능." },
   { id:"c11", title:"분쟁·사고 대비",
-    what:"(전세) 전세보증금 반환보증 가입 가능 여부·조건 확인(HUG/SGI 등) / 임대차분쟁조정위 연락처 / 임차권등기명령 절차 숙지",
-    why:"계약 불이행·보증금 미반환 등에 대비한 안전장치." }
+    what:"전세보증금 반환보증 가입 여부 확인, 임대차분쟁조정위 절차 숙지",
+    why:"보증금 미반환 등에 대비한 안전장치." }
 ];
 const MONTHLY = [
   { id:"m13", title:"임대료·증액 규정 확인",
-    what:"월세·보증금 금액과 납부일, 연체이자율(연 12% 이내 등 상한 명시), 갱신 시 5% 상한제, 갱신요구권(만료 6~2개월 전 통지) 기재",
-    why:"불합리한 증액 요구·갱신 거절 예방, 법정 권리 일정 내 행사." },
+    what:"월세·보증금 금액과 납부일, 연체이자율, 갱신요구권 기재",
+    why:"불합리한 증액 요구·갱신 거절 예방." },
   { id:"m14", title:"관리비·주차·반려동물·소음 등 생활조건",
-    what:"관리규약, 층간소음·흡연·반려동물 가능 여부·보증금 추가, 주차(대수·요금·위치), 쓰레기/분리수거 요일",
+    what:"관리규약, 층간소음, 반려동물 여부, 주차 가능 여부",
     why:"생활상 분쟁 및 추가비용 방지." },
   { id:"m15", title:"원상복구 범위 합의",
-    what:"못·선반·페인트 등 설치 허용 범위와 원상복구 범위, 벽지·장판 감가(통상손모) 처리 기준 특약 명문화",
+    what:"못·선반·페인트 등 설치 허용 범위, 감가처리 기준",
     why:"퇴거 시 과도한 원상복구 요구 예방." }
 ];
 const JEONSE = [
   { id:"j13", title:"선순위 채권 + 보증금 ≤ 주택가액 80% 원칙",
-    what:"등기부 선순위 합계 확인, 시세는 실거래가·감정가 참고",
-    why:"낙찰가 하락 고려 시 합계가 높을수록 보증금 회수 실패 위험 큼." },
-  { id:"j14", title:"보증금 안전장치: 확정일자(+전입) vs 전세권 설정",
-    what:"협조 시 전세권 설정 검토, 미협조/다가구 등은 확정일자+전입으로 우선변제권, 상황에 따라 병행",
-    why:"전세권: 경매신청 가능 / 확정일자: 간편하지만 경매신청권 없음." },
-  { id:"j15", title:"전세보증금 반환보증 가입 가능 여부 사전확인",
-    what:"보증기관 보증한도·가입요건, 선순위채권 변동 금지 특약",
-    why:"보증보험이 최종 안전망. 가입 불가 매물은 구조적 리스크 가능." },
-  { id:"j16", title:"잔금일 당일 재확인·등기 변동 방지 특약",
-    what:"잔금·열쇠교부 전 등기부 재발급, 선순위 변동 시 해제·배액상환 특약, 새로운 근저당 금지",
-    why:"잔금 직전 담보 설정·이중계약 위험 차단." }
+    what:"등기부 선순위 합계 확인, 시세는 실거래가 참고",
+    why:"낙찰가 하락 고려 시 보증금 회수 실패 위험 큼." },
+  { id:"j14", title:"보증금 안전장치",
+    what:"확정일자(+전입) 또는 전세권 설정",
+    why:"보증보험 불가 매물은 구조적 리스크." },
+  { id:"j15", title:"전세보증금 반환보증 가입 여부",
+    what:"보증기관 보증한도·가입요건 확인",
+    why:"보증보험이 최종 안전망." },
+  { id:"j16", title:"잔금일 당일 재확인·등기 변동 방지",
+    what:"잔금 직전 등기부 재발급, 특약으로 변동 방지",
+    why:"잔금 직전 담보 설정·이중계약 차단." }
 ];
 
-/** 예시 이미지(고정) */
 const DEFAULT_PHOTO =
   "https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?q=80&w=1600&auto=format&fit=crop";
 
 export default function LeaseChecklistPage() {
+  const location = useLocation();
+  const item = location.state?.item;
+
+  const initialContract = item?.monthlyRent > 0 ? "monthly" : "jeonse";
+
   const [enabled, setEnabled] = useState(true);
-  const [contract, setContract] = useState("monthly");
+  const [contract, setContract] = useState(initialContract);
   const [openIds, setOpenIds] = useState(() => new Set());
   const [checked, setChecked] = useState({});
   const [whyModal, setWhyModal] = useState(null);
   const KEY = "leaseChecklist_v7_full";
 
-  // 로컬스토리지(체크/토글만 저장)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(KEY);
@@ -96,19 +99,12 @@ export default function LeaseChecklistPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!whyModal) return;
-    const onKey = (e) => { if (e.key === "Escape") setWhyModal(null); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [whyModal]);
-
   const onReset = () => {
     setEnabled(false);
     setChecked({});
     setOpenIds(new Set());
     setWhyModal(null);
-    setContract("monthly");
+    setContract(initialContract);
     localStorage.removeItem(KEY);
   };
   const onSave = () => {
@@ -140,19 +136,30 @@ export default function LeaseChecklistPage() {
         <IconBtn aria-hidden />
       </TopBar>
 
-      {/* 예시 사진(고정) */}
+      {/* 매물 사진 */}
       <Section>
         <HeroBox>
-          <Hero src={DEFAULT_PHOTO} alt="room" />
+          <Hero src={item?.사진 || DEFAULT_PHOTO} alt="room" />
         </HeroBox>
       </Section>
 
+      {/* ✅ Tabs: 사진 바로 밑 */}
       <Tabs>
         <TabLink to="/homedetailpage" end>상세보기</TabLink>
         <TabLink to="/leasechecklistpage">집 계약 체크리스트</TabLink>
       </Tabs>
 
+      {/* ✅ 매물 정보는 Card 안쪽 */}
       <Card>
+        <InfoBox>
+          <h3>{item?.aptNm}</h3>
+          <p>{item?.address}</p>
+          <p>
+            보증금 {item?.deposit?.toLocaleString()}원 /{" "}
+            {item?.monthlyRent > 0 ? `월세 ${item.monthlyRent.toLocaleString()}원` : "전세"}
+          </p>
+        </InfoBox>
+
         <CardHead>
           <HeadLeft><TipIcon/><HeadTitle>살펴야 할 사항</HeadTitle></HeadLeft>
         </CardHead>
@@ -231,7 +238,7 @@ function ChecklistItem({ item, enabled, open, checked, onToggleOpen, onToggleChe
   );
 }
 
-/* ===== styled ===== */
+/* ===== styled-components ===== */
 const Wrap = styled.div`min-height:100dvh;background:${C.bg};color:${C.text};`;
 const TopBar = styled.header`
   position:sticky;top:0;z-index:10;height:${S.headerH}px;
@@ -246,36 +253,47 @@ const HeroBox = styled.div`border:1px solid ${C.line};border-radius:${R.img}px;o
 const Hero = styled.img`width:100%;aspect-ratio:16/10;object-fit:cover;display:block;`;
 
 const Tabs = styled.div`
-  display:grid;grid-template-columns:1fr 1fr;
-  padding:10px ${S.padX}px 0;
-  margin-top:3%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 10px ${S.padX}px 0;
+  border-bottom: 1px solid ${C.line};
+  background: #fff;
 `;
 const TabLink = styled(NavLink)`
-  display: block;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 10px 0;
   font-weight: 700;
   color: ${C.sub};
   text-decoration: none;
   position: relative;
   cursor: pointer;
-
-  /* 활성 탭 스타일 */
-  &.active {
-    color: ${C.blue};
-  }
-  &.active::after {
+  &::after {
     content: "";
     position: absolute;
     left: 0; right: 0; bottom: -1px;
-    height: 2px; border-radius: 2px;
-    background: ${C.blue};
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
   }
+  &.active { color: ${C.blue}; }
+  &.active::after { background: ${C.blue}; }
 `;
+
 const Card = styled.section`margin:12px ${S.padX}px; padding:12px; background:#fff; border:1px solid ${C.line}; border-radius:${R.card}px;`;
+const InfoBox = styled.div`
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid ${C.line};
+  border-radius: 10px;
+  background: ${C.soft};
+  h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+  p { margin: 0; font-size: 14px; color: ${C.sub}; }
+`;
 const CardHead = styled.div`display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;`;
 const HeadLeft = styled.div`display:inline-flex;align-items:center;gap:8px;`;
-const HeadTitle = styled.b`font-weight:800;letter-spacing:-0.2px;`;
+const HeadTitle = styled.b`font-weight:800;`;
 
 const List = styled.ul`list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;`;
 const GroupLabel = styled.li`margin:10px 2px 2px;font-size:12px;font-weight:800;color:${C.sub};`;
@@ -298,7 +316,6 @@ const Bottom = styled.div`position:sticky;bottom:0;background:#fff;display:grid;
 const GhostBtn = styled.button`height:48px;border-radius:14px;border:1px solid ${C.blue};color:${C.blue};background:#fff;font-weight:800;`;
 const PrimaryBtn = styled.button`height:48px;border-radius:14px;border:0;background:${C.blue};color:#fff;font-weight:800;`;
 
-/* 모달 */
 const ModalOverlay = styled.div`position:fixed;inset:0;background:${C.overlay};display:grid;place-items:center;z-index:1000;padding:20px;`;
 const Modal = styled.div`width:100%;max-width:560px;background:#fff;border-radius:16px;border:1px solid ${C.line};box-shadow:0 10px 30px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden;`;
 const ModalHeader = styled.div`display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid ${C.line};`;

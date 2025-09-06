@@ -3,8 +3,11 @@ import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../../assets/Logo.png";
+import { login } from "../../apis/auth";
 
 const SHELL_MAX_WIDTH = 512;
+
+
 
 const COLORS = {
   bg: "#FFFFFF",
@@ -263,17 +266,34 @@ const SignupRow = styled.div`
 
 export default function Login() {
   const nav = useNavigate();
-  const [id, setId] = useState("");
-  const [pw, setPw] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [keep, setKeep] = useState(true);
+  const [err, setErr] = useState("");
 
-  const canSubmit = id.trim().length > 0 && pw.length >= 4;
-
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit) return;
-    nav("/dashboard");
+    setErr("");
+
+     if (!email || !password) {
+    setErr("이메일과 비밀번호를 입력해주세요.");
+    return;
+  }
+  if (!email.includes("@")) {
+    setErr("올바른 이메일 주소를 입력해주세요.");
+    return;
+  }
+  if (password.length < 6) {
+    setErr("비밀번호는 최소 6자 이상이어야 합니다.");
+    return;
+  }
+    try {
+      await login({ email, password, keep, method: "post" }); // 서버가 PATCH면 "patch"
+      nav("/", { replace: true });
+    } catch (e) {
+      setErr(e?.response?.data?.message ?? "로그인 실패");
+    }
   };
 
   return (
@@ -304,10 +324,10 @@ export default function Login() {
               </PrefixIcon>
               <Input
                 id="id"
-                placeholder="아이디를 입력해주세요."
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                autoComplete="username"
+                placeholder="이메일을 입력해주세요."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </Field>
           </div>
@@ -327,8 +347,8 @@ export default function Login() {
                 id="pw"
                 placeholder="비밀번호를 입력해주세요."
                 type={showPw ? "text" : "password"}
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
               <SuffixBtn
@@ -374,9 +394,10 @@ export default function Login() {
           <InlineLink to="/find-password">비밀번호 찾기</InlineLink>
         </Row>
 
-        <PrimaryBtn type="submit" disabled={!canSubmit} onClick={onSubmit}>
+        <PrimaryBtn type="submit"  onClick={onSubmit}>
           로그인
         </PrimaryBtn>
+        {err && <p style={{color:"crimson"}}>{err}</p>}
 
         <Or>or</Or>
 

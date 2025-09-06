@@ -154,13 +154,17 @@ const HeroBox = styled.div`border:1px solid ${C.line};border-radius:${R.img}px;o
 const Hero = styled.img`width:100%;aspect-ratio:16/10;object-fit:cover;display:block;`;
 
 const Tabs = styled.div`
-  display:grid;grid-template-columns:1fr 1fr;
-  padding:10px ${S.padX}px 0;
-  margin-top:3%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 10px ${S.padX}px 0;
+  margin-top: 3%;
+  border-bottom: 1px solid ${C.line}; /* 밑줄 기본 틀 */
 `;
+
 const TabLink = styled(NavLink)`
-  display: block;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 10px 0;
   font-weight: 700;
   color: ${C.sub};
@@ -168,18 +172,27 @@ const TabLink = styled(NavLink)`
   position: relative;
   cursor: pointer;
 
-  /* 활성 탭 스타일 */
+  /* 밑줄 자리를 항상 확보 (높이 고정) */
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent; /* 기본은 투명 */
+  }
+
   &.active {
     color: ${C.blue};
   }
+
   &.active::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; bottom: -1px;
-    height: 2px; border-radius: 2px;
-    background: ${C.blue};
+    background: ${C.blue}; /* 활성화 시만 파란색 */
   }
 `;
+
 
 const Card = styled.section`
   position: relative; /* ← absolute 기준 */
