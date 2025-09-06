@@ -64,7 +64,7 @@ const NavItemsWrapper = styled.div`
 
 const NavGrid = styled.div`
   display: grid;
-  grid-template-columns: 77.4px 77.4px 54px 77.4px 77.4px;
+  grid-template-columns: 77.4px 77.4px 77.4px 77.4px 77.4px;
   width: 390px;
   height: 52px;
   align-items: center;
@@ -181,7 +181,7 @@ const HomeIndicatorArea = styled.div`
 
 const navItems = [
   { key: "home", icon: HomeIcon, label: "홈", path: "/" },
-  { key: "favorites", icon: StarIcon, label: "나의기록", path: "/favorites" },
+  { key: "userrecord", icon: StarIcon, label: "나의기록", path: "/userrecord" },
   { key: "checklist", icon: CheckListIcon, label: "둘러보기", path: "/checklist" },
   { key: "mypage", icon: MapIcon, label: "마이페이지", path: "/mypage" },
 ];

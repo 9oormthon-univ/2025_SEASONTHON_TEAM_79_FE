@@ -63,7 +63,11 @@ const CheckIcon = styled.svg`
 
   path {
     stroke: ${(props) => (props.$checked ? "#3b82f6" : "#A4ADB2")};
+<<<<<<< HEAD
     strokeWidth: 1.66667;
+=======
+    stroke-width: 1.66667;
+>>>>>>> bc186fb (메인페이지 수정, 체크리스트 구현, 나의 상세보기 구현)
     strokeLinecap: round;
     strokeLinejoin: round;
     fill: none;

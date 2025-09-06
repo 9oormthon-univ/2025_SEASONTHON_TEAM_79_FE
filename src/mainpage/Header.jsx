@@ -47,7 +47,7 @@ const LogoButton = styled.button`
   }
 `;
 
-const LogoutButton = styled.button`
+const AuthButton = styled.button`
   display: flex;
   align-items: center;
   gap: 12px;
@@ -70,7 +70,7 @@ const LogoutButton = styled.button`
   vertical-align: middle;
 `;
 
-export default function Header({ onLogout }) {
+export default function Header({ onLogout, isLoggedIn, onLogin }) {
   const goHome = () => {
     window.location.href = "/";
   };
@@ -78,7 +78,13 @@ export default function Header({ onLogout }) {
   return (
     <HeaderContainer>
       <LogoButton onClick={goHome}>자취췍</LogoButton>
-      <LogoutButton onClick={onLogout}>로그아웃</LogoutButton>
+      {isLoggedIn ? (
+        <AuthButton onClick={onLogout}>로그아웃</AuthButton>
+      ) : (
+        <AuthButton onClick={onLogin} isLogin={true}>
+          로그인
+        </AuthButton>
+      )}
     </HeaderContainer>
   );
 }

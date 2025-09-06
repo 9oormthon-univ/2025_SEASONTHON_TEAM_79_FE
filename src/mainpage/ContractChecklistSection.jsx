@@ -5,18 +5,16 @@ import mainlogo from "../assets/mainlogo.png";
 const SectionContainer = styled.section`
   padding: 0 16px;
   background-color: #ffffff;
-
-  @media (min-width: 391px) {
-    padding: 0 calc(20px + (100vw - 390px) * 0.1); /* 점진적으로 패딩 증가 */
-  }
+  overflow-x: hidden;
 `;
 
 // 전체 래퍼
 const ChecklistWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 480px;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
 `;
 
@@ -50,7 +48,6 @@ const LogoButton = styled.button`
 const TextArea = styled.div`
   height: 44px;
   p {
-    font-family: Font Family/Font Family;
     font-size: 16px;
     font-weight: 700;
     color: #000000;
@@ -67,21 +64,26 @@ const TextArea = styled.div`
   span {
     font-weight: 400;
   }
+
+  ${(props) =>
+    props.centered &&
+    `
+    display: flex;
+    align-items: center;
+  `}
 `;
 
-// 버튼 컨테이너 (348px width, gap 34px)
 const ButtonContainer = styled.div`
   display: flex;
   gap: 16px;
-  width: 356px;
+  width: 100%;
   height: 100px;
   text-align: center;
-  `;
+`;
 
-// 개별 버튼 (157px × 100px)
 const RecordButton = styled.button`
   flex: 1;
-  width: 177px;
+  min-width: 0;
   height: 100px;
   border-radius: 16px;
   border: none;
@@ -91,9 +93,7 @@ const RecordButton = styled.button`
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
   box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.1);
 
   &:hover {
@@ -102,19 +102,17 @@ const RecordButton = styled.button`
 `;
 const ChecklistButton = styled.button`
   flex: 1;
-  width: 177px;
+  min-width: 0;
   height: 100px;
   border-radius: 16px;
-  border: 1px solid #3299ff;
+  border: 1px solid #e8eef2;
   background: #ffffff;
   color: #464a4d;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
   box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.1);
 
   &:hover {
@@ -130,7 +128,8 @@ const RecordButtonIcon = styled.div`
   border: none;
   display: flex;
   align-items: center;
-  justify-content: center;
+  margin-left: auto;
+  marign-right: 16px;
 
   svg {
     width: 100%;
@@ -148,6 +147,8 @@ const ChecklistButtonIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: auto;
+  marign-right: 16px;
 
   svg {
     width: 100%;
@@ -162,10 +163,50 @@ const ButtonText = styled.span`
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0;
-  text-align: center;
+  text-align: left;
+  margin-left: 16px;
+  height: 20px;
+  color: #ffffff;
+`;
+const SubButtonText = styled.span`
+  height: 20px;
+  font-family: Andika;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0;
+  text-align: left;
+  margin-left: 16px;
+  height: 20px;
+  color: #e5e5e5;
 `;
 
-export default function ContractChecklistSection({ userName, onChecklistClick }) {
+const CheckButtonText = styled.span`
+  font-family: Andika;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  text-align: left;
+  margin-left: 16px;
+  height: 20px;
+  color: #464a4d;
+`;
+
+const CheckSubButtonText = styled.span`
+  height: 20px;
+  font-family: Andika;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0;
+  text-align: left;
+  margin-left: 16px;
+  height: 20px;
+  color: #757b80;
+`;
+
+export default function ContractChecklistSection({ userName, onChecklistClick, isLoggedIn }) {
   return (
     <SectionContainer>
       <ChecklistWrapper>
@@ -173,42 +214,55 @@ export default function ContractChecklistSection({ userName, onChecklistClick })
           <LogoButton>
             <img src={mainlogo} alt="Logo" />
           </LogoButton>
-          <TextArea>
-            <p>
-              반갑습니다. <span className="highlight">{userName}</span>님
-            </p>
-            <span>편리하게 필수 자취리스트를 체크하세요</span>
-          </TextArea>
+
+          {isLoggedIn ? (
+            <TextArea>
+              <p>
+                반갑습니다. <span className="highlight">{userName}</span>님
+              </p>
+              <span>편리하게 필수 자취리스트를 체크하세요</span>
+            </TextArea>
+          ) : (
+            <TextArea centered>
+              <p>로그인 후 기록을 시작해보세요.</p>
+            </TextArea>
+          )}
         </TextWrapper>
 
         {/* 버튼 영역 */}
         <ButtonContainer>
           {/* 체크리스트 버튼 */}
           <RecordButton onClick={onChecklistClick}>
+            <ButtonText>매물기록하기</ButtonText>
+            <SubButtonText>AI 음성메모로 편리하게! </SubButtonText>
             <RecordButtonIcon>
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
-                  d="M21 33V28.3875L30.8625 18.5625L35.475 23.1375L25.6125 33H21ZM23.25 30.75H24.675L29.2125 26.175L28.5375 25.4625L27.825 24.7875L23.25 29.325V30.75ZM6 33V3H21L30 12V16.5H27V13.5H19.5V6H9V30H18V33H6ZM28.5375 25.4625L27.825 24.7875L29.2125 26.175L28.5375 25.4625Z"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M1.5 17.625C1.5 8.75368 8.75368 1.5 17.625 1.5C26.4963 1.5 33.75 8.75368 33.75 17.625C33.75 26.4963 26.4963 33.75 17.625 33.75C8.75368 33.75 1.5 26.4963 1.5 17.625ZM17.625 3.75C9.99632 3.75 3.75 9.99632 3.75 17.625C3.75 25.2537 9.99632 31.5 17.625 31.5C25.2537 31.5 31.5 25.2537 31.5 17.625C31.5 9.99632 25.2537 3.75 17.625 3.75Z"
                   fill="white"
                 />
+                <path fillRule="evenodd" clipRule="evenodd" d="M16.5 23.625V11.625H18.75V23.625H16.5Z" fill="white" />
+                <path fillRule="evenodd" clipRule="evenodd" d="M11.625 16.5H23.625V18.75H11.625V16.5Z" fill="white" />
               </svg>
             </RecordButtonIcon>
-            <ButtonText>매물기록하기</ButtonText>
           </RecordButton>
 
           {/* 최근 계약 리스트 버튼 */}
           <ChecklistButton>
+            <CheckButtonText>계약 시 체크리스트</CheckButtonText>
+            <CheckSubButtonText>최근 조회 목록 </CheckSubButtonText>
             <ChecklistButtonIcon>
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 8.25L4.821 10.5L11.25 4.5" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path opacity="0.5" d="M3 18.75L4.821 21L11.25 15" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 29.25L4.821 31.5L11.25 25.5" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M33 28.5H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
-                <path opacity="0.5" d="M33 18H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
-                <path d="M33 7.5H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
+                <path d="M3 8.25L4.821 10.5L11.25 4.5" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path opacity="0.5" d="M3 18.75L4.821 21L11.25 15" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M3 29.25L4.821 31.5L11.25 25.5" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M33 28.5H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
+                <path opacity="0.5" d="M33 18H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
+                <path d="M33 7.5H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
               </svg>
             </ChecklistButtonIcon>
-            <ButtonText>최근 계약 체크리스트</ButtonText>
           </ChecklistButton>
         </ButtonContainer>
       </ChecklistWrapper>

@@ -8,15 +8,23 @@ import Map from "./Map/MapBrowseExact";
 import ListingPage from "./Map/ListingExact";
 import MainPage from "./mainpage/MainPage";
 import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
+<<<<<<< HEAD
 import LeaseChecklistPage from "./user/LeaseChecklistPage/LeaseChecklistPage";
 import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
+=======
+>>>>>>> bc186fb (메인페이지 수정, 체크리스트 구현, 나의 상세보기 구현)
 import UserRecordPage from "./user/HomeDetailPage/UserRecordPage";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
+<<<<<<< HEAD
         <Route index element={<MainPage />} />
+=======
+        {/* <Route index element={<Navigate to="/login" replace />} /> */}
+
+>>>>>>> bc186fb (메인페이지 수정, 체크리스트 구현, 나의 상세보기 구현)
         <Route path="/" element={<MainPage />} />
 
         
@@ -28,10 +36,15 @@ export default function App() {
         <Route path="signup" element={<Signup />} />
         <Route path="find-id" element={<FindId />} />
         <Route path="find-password" element={<FindPassword />} />
+<<<<<<< HEAD
         <Route path="map" element={<Map/>}/>
         <Route path="listingpage" element={<ListingPage/>}/>
         <Route path="leasechecklistpage" element={<LeaseChecklistPage/>}/>
         <Route path="homedetailpage" element={<HomeDetailPage/>}/>
+=======
+        <Route path="map" element={<Map />} />
+        <Route path="listingpage" element={<ListingPage />} />
+>>>>>>> bc186fb (메인페이지 수정, 체크리스트 구현, 나의 상세보기 구현)
       </Route>
     </Routes>
   );
