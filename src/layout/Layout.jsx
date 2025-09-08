@@ -47,7 +47,7 @@ export default function Layout() {
   const location = useLocation();
 
   //바텀 네비게이션을 숨길 페이지들
-  const hideBottomNavPages = ["/login", "/signup", "/find-id", "/find-password"];
+  const hideBottomNavPages = ["/login", "/signup", "/find-id", "/find-password","/checklist"];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
   return (
     <>
