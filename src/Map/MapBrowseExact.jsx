@@ -19,8 +19,7 @@ export default function MapBrowseExact() {
   const isList = pathname === "/listingpage";
   const isMap  = pathname === "/map";
 
-  // ✅ 명지전문대 좌표(서대문구 남가좌동 일대) — 하드코딩
-  // 필요시 정확 좌표로 수정하세요.
+  // ✅ 명지전문대 좌표
   const MJC = { lat: 37.5828, lng: 126.9114 };
 
   // 더미 방(명지전문대 인근)
@@ -81,6 +80,8 @@ export default function MapBrowseExact() {
     const markers = DUMMIES.map((r) => {
       const ll = new kakao.maps.LatLng(baseLat + r.off[0], baseLng + r.off[1]);
       const m = new kakao.maps.Marker({ position: ll, title: r.name });
+
+      // 인포윈도우(일반용)
       const iw = new kakao.maps.InfoWindow({
         content: `
           <div style="padding:8px 10px; font-size:12px;">
@@ -88,7 +89,25 @@ export default function MapBrowseExact() {
             <div>${r.type} · ${r.price}</div>
           </div>`,
       });
-      addToggle(m, iw);
+
+      // ✅ “DMC 파크뷰자이”만 클릭 시 상세로 이동
+      if (r.name === "DMC 파크뷰자이") {
+        kakao.maps.event.addListener(m, "click", () => {
+          navigate("/homedetailpage", {
+            state: {
+              item: {
+                aptNm: r.name,
+                address: "서울 서대문구 북가좌 2동",
+                사진: "", // 필요시 썸네일 경로 전달
+              },
+            },
+          });
+        });
+      } else {
+        // 나머지는 기존처럼 토글(인포윈도우 열기/닫기)
+        addToggle(m, iw);
+      }
+
       return m;
     });
 
@@ -137,7 +156,7 @@ export default function MapBrowseExact() {
     setStatus("명지전문대 위치로 이동");
   };
 
-  /* ───────── Kakao SDK 로드 + 초기화(명지전문대 고정) ───────── */
+  /* ───────── Kakao SDK 로드 + 초기화 ───────── */
   useEffect(() => {
     const KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
     if (!KEY) { setStatus(".env의 VITE_KAKAO_MAP_KEY가 없습니다."); return; }
@@ -155,7 +174,6 @@ export default function MapBrowseExact() {
       s.onerror = () => setStatus("SDK 로드 실패(키/도메인 확인)");
       document.head.appendChild(s);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ───────── controls ───────── */
@@ -229,7 +247,7 @@ export default function MapBrowseExact() {
       <div style={{ position: "absolute", right: 12, bottom: 120, display: "grid", gap: 8, zIndex: 15 }}>
         <button onClick={zoomIn}  style={ctrlBtn}>＋</button>
         <button onClick={zoomOut} style={ctrlBtn}>－</button>
-        {/* ✅ '현위치' 대신 명지전문대 중심으로 이동 */}
+        {/* ✅ '현위치' 대신 명지전문대 중심 이동 */}
         <button onClick={moveToMJC} style={ctrlBtn}>◎</button>
         <button style={ctrlBtn}>🗺️</button>
       </div>

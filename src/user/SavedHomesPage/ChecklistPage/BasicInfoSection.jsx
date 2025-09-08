@@ -135,8 +135,6 @@ const ActiveBackground = styled.div`
 `;
 
 export default function BasicInfoSection({
-  buildingName,
-  address,
   deposit,
   monthlyRent,
   maintenanceFee,
@@ -149,6 +147,9 @@ export default function BasicInfoSection({
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState([]);
   const [activeIndex, setActiveIndex] = useState(defaultValue);
+
+  const isMonthlyRent = activeIndex === 0; // 0이면 월세, 1이면 전세
+  const currentRentType = isMonthlyRent ? leftOption : rightOption;
 
   const handleKeywordChange = (e) => {
     setKeyword(e.target.value);
@@ -227,11 +228,15 @@ export default function BasicInfoSection({
           <Label htmlFor="deposit">보증금</Label>
           <Input id="deposit" type="text" placeholder="0만원" value={deposit} onChange={(e) => onChange("deposit", e.target.value)} />
         </InputGroup>
-
-        {/* 월세 입력 추가 */}
-        <InputGroup>
-          <Label htmlFor="monthlyRent">월세</Label>
-          <Input id="monthlyRent" type="text" placeholder="0만원" value={monthlyRent} onChange={(e) => onChange("monthlyRent", e.target.value)} />
+     <InputGroup>
+          <Label htmlFor="monthlyRent">{currentRentType}</Label>
+          <Input
+            id="monthlyRent"
+            type="text"
+            placeholder={isMonthlyRent ? "0만원" : "0만원"}
+            value={monthlyRent}
+            onChange={(e) => onChange("monthlyRent", e.target.value)}
+          />
         </InputGroup>
       </InputGroupWrapper>
 

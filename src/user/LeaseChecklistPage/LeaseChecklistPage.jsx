@@ -10,7 +10,7 @@ const C = {
   soft: "#F8FAFF",
   text: "#0F172A",
   sub: "#6B7280",
-  blue: "#3299FFF",
+  blue: "#3299FF",
   overlay: "rgba(14,18,27,.5)",
 };
 const R = { img: 12, card: 12, pill: 999 };
@@ -156,12 +156,20 @@ export default function LeaseChecklistPage() {
       console.warn("restore failed", err);
     }
   }, []);
+
   const onSave = () => {
-    localStorage.setItem(KEY, JSON.stringify({ enabled, checked, contract }));
+    // 항상 활성 상태로 저장
+    setEnabled(true);
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ enabled: true, checked, contract })
+    );
     alert("저장되었습니다.");
   };
+
   const onReset = () => {
-    setEnabled(false);
+    // 초기화 후에도 바로 체크 가능하도록 활성화 유지
+    setEnabled(true);
     setChecked(
       Object.fromEntries([...COMMON, ...MONTHLY].map((it) => [it.id, false]))
     );
