@@ -157,7 +157,7 @@ export default function RecommendedPropertiesSection({ properties = [], onProper
       </SectionHeader>
 
       {isLoggedIn ? (
-        <PropertiesList itemCount={properties.length}>
+        <PropertiesList $itemCount={properties.length}>
           {properties.map((property) => (
             <PropertyCard key={property.id} onClick={() => onPropertyClick(property.id)}>
               <PropertyImage>

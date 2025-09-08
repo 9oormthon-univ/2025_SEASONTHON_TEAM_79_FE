@@ -255,12 +255,12 @@ export default function ContractChecklistSection({ userName, onChecklistClick, i
             <CheckSubButtonText>최근 조회 목록 </CheckSubButtonText>
             <ChecklistButtonIcon>
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 8.25L4.821 10.5L11.25 4.5" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path opacity="0.5" d="M3 18.75L4.821 21L11.25 15" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 29.25L4.821 31.5L11.25 25.5" stroke="#3299FF" stroke-width="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M33 28.5H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
-                <path opacity="0.5" d="M33 18H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
-                <path d="M33 7.5H18" stroke="#3299FF" stroke-width="2" strokeLinecap="round" />
+                <path d="M3 8.25L4.821 10.5L11.25 4.5" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path opacity="0.5" d="M3 18.75L4.821 21L11.25 15" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M3 29.25L4.821 31.5L11.25 25.5" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M33 28.5H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
+                <path opacity="0.5" d="M33 18H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
+                <path d="M33 7.5H18" stroke="#3299FF" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </ChecklistButtonIcon>
           </ChecklistButton>
