@@ -92,12 +92,10 @@ export default function ListingExact() {
     setWish(n);
   };
 
-  // ✅ 두 번째 카드만 상세페이지로 이동
+  // ✅ 두 번째 카드만 상세페이지로 이동 (id 기반 라우팅)
   const handleCardClick = (it) => {
     if (it.id === "cc-02") {
-      // 필요하면 state로 데이터 전달 가능:
-      // navigate("/homedetailpage", { state: { item: it } });
-      navigate("/homedetailpage");
+      navigate(`/homedetailpage/${it.id}`);
     }
   };
 
@@ -179,8 +177,7 @@ export default function ListingExact() {
         })}
       </List>
 
-      {/* 플로팅 + 버튼 */}
-      <Fab>＋</Fab>
+      {/* ✅ 플로팅 버튼 제거됨 */}
     </Wrap>
   );
 }
@@ -248,13 +245,6 @@ const Deal = styled.div`font-weight:900; margin-top:2px;`;
 const WishBtn = styled.button`
   border:0; background:transparent; cursor:pointer; align-self:start;
   color:${(p)=>p.$on?C.blue:"#9aa0a6"};
-`;
-
-const Fab = styled.button`
-  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-  width: ${S.fab}px; height: ${S.fab}px; border-radius: 999px; border: 0;
-  background: ${C.blue}; color: #fff; font-size: 24px; font-weight: 800;
-  box-shadow: 0 10px 20px rgba(76,141,255,.35); cursor: pointer;
 `;
 
 /** ===== Icons (SVG) ===== */

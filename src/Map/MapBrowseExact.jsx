@@ -54,15 +54,88 @@ export default function MapBrowseExact() {
   const updateLabelFromLatLng = (ll) => {
     const geocoder = geocoderRef.current;
     if (!geocoder) return;
-    geocoder.coord2RegionCode(
-      ll.getLng(),
-      ll.getLat(),
-      (result, s) => {
-        if (s !== window.kakao.maps.services.Status.OK || !result?.length) return;
-        const r = result.find((x) => x.region_type === "H") || result[0];
-        setLocationLabel(`${r.region_1depth_name} ${r.region_2depth_name} ${r.region_3depth_name}`);
-      }
-    );
+    geocoder.coord2RegionCode(ll.getLng(), ll.getLat(), (result, s) => {
+      if (s !== window.kakao.maps.services.Status.OK || !result?.length) return;
+      const r = result.find((x) => x.region_type === "H") || result[0];
+      setLocationLabel(`${r.region_1depth_name} ${r.region_2depth_name} ${r.region_3depth_name}`);
+    });
+  };
+
+  /** 팝업(인포윈도우)용 DOM 콘텐츠 생성 */
+  const buildInfoContent = (room) => {
+    const { kakao } = window;
+
+    const wrap = document.createElement("div");
+    // 깔끔한 흰색 팝업 스타일
+    wrap.style.cssText = [
+      "padding:10px 12px",
+      "font-size:12px",
+      "background:#fff",
+      "border:1px solid #E7EDF5",
+      "border-radius:8px",
+      "box-shadow:0 6px 20px rgba(0,0,0,.12)",
+      "min-width:180px",
+    ].join(";");
+
+    // 내부 구조
+    const title = document.createElement("div");
+    title.style.cssText = "font-weight:800;margin-bottom:6px;letter-spacing:-.2px";
+    title.textContent = room.name;
+
+    const meta = document.createElement("div");
+    meta.style.cssText = "color:#374151;margin-bottom:8px";
+    meta.textContent = `${room.type} · ${room.price}`;
+
+    const footer = document.createElement("div");
+    footer.style.cssText = "display:flex;gap:8px;align-items:center";
+
+    // “상세보기” 버튼은 DMC 파크뷰자이만 노출
+    if (room.name === "DMC 파크뷰자이") {
+      const btn = document.createElement("button");
+      btn.textContent = "상세보기";
+      btn.style.cssText = [
+        "border:1px solid #4C8DFF",
+        "background:#4C8DFF",
+        "color:#fff",
+        "border-radius:999px",
+        "padding:6px 10px",
+        "font-weight:700",
+        "cursor:pointer",
+      ].join(";");
+
+      // 버튼 클릭 시 상세 이동
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        // 지도 클릭 이벤트로 전파되는 것 방지
+        if (kakao?.maps?.event?.preventMap) kakao.maps.event.preventMap();
+        closeInfo();
+        navigate("/homedetailpage", {
+          state: {
+            item: {
+              aptNm: room.name,
+              address: "서울 서대문구 북가좌 2동",
+              사진: "",
+            },
+          },
+        });
+      });
+
+      footer.appendChild(btn);
+    }
+
+    wrap.appendChild(title);
+    wrap.appendChild(meta);
+    if (footer.childNodes.length) wrap.appendChild(footer);
+
+    // 팝업 내부 아무 곳이나 클릭 시 지도가 반응하지 않도록(안전장치)
+    wrap.addEventListener("mousedown", () => {
+      if (kakao?.maps?.event?.preventMap) kakao.maps.event.preventMap();
+    });
+    wrap.addEventListener("touchstart", () => {
+      if (kakao?.maps?.event?.preventMap) kakao.maps.event.preventMap();
+    });
+
+    return wrap;
   };
 
   const showDummiesAround = (centerLL) => {
@@ -81,32 +154,12 @@ export default function MapBrowseExact() {
       const ll = new kakao.maps.LatLng(baseLat + r.off[0], baseLng + r.off[1]);
       const m = new kakao.maps.Marker({ position: ll, title: r.name });
 
-      // 인포윈도우(일반용)
-      const iw = new kakao.maps.InfoWindow({
-        content: `
-          <div style="padding:8px 10px; font-size:12px;">
-            <div style="font-weight:700; margin-bottom:4px;">${r.name}</div>
-            <div>${r.type} · ${r.price}</div>
-          </div>`,
-      });
+      // ✅ 인포윈도우를 DOM 노드로 생성 + 버튼 이벤트 연결
+      const contentEl = buildInfoContent(r);
+      const iw = new kakao.maps.InfoWindow({ content: contentEl, removable: false });
 
-      // ✅ “DMC 파크뷰자이”만 클릭 시 상세로 이동
-      if (r.name === "DMC 파크뷰자이") {
-        kakao.maps.event.addListener(m, "click", () => {
-          navigate("/homedetailpage", {
-            state: {
-              item: {
-                aptNm: r.name,
-                address: "서울 서대문구 북가좌 2동",
-                사진: "", // 필요시 썸네일 경로 전달
-              },
-            },
-          });
-        });
-      } else {
-        // 나머지는 기존처럼 토글(인포윈도우 열기/닫기)
-        addToggle(m, iw);
-      }
+      // 모든 마커는 클릭 시 인포윈도우 토글
+      addToggle(m, iw);
 
       return m;
     });

@@ -11,7 +11,6 @@ import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
 import LeaseChecklistPage from "./user/LeaseChecklistPage/LeaseChecklistPage";
 import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
 import UserRecordPage from "./user/HomeDetailPage/UserRecordPage";
-import LeaseCheckedlistPage from "./user/LeaseChecklistPage/LeaseCheckedlistPage";
 export default function App() {
   return (
     <Routes>
@@ -31,7 +30,6 @@ export default function App() {
         <Route path="map" element={<Map/>}/>
         <Route path="listingpage" element={<ListingPage/>}/>
         <Route path="leasechecklistpage" element={<LeaseChecklistPage/>}/>
-        <Route path="leasecheckedlistpage" element={<LeaseCheckedlistPage/>}/>
         <Route path="homedetailpage" element={<HomeDetailPage/>}/>
       </Route>
     </Routes>
