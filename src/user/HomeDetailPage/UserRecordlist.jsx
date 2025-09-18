@@ -47,7 +47,6 @@ const PropertyContent = styled.div`
   flex-direction: column;
   gap: 3px;
   padding-right: 8px;
-}
 `;
 
 const LocationText = styled.span`

@@ -19,9 +19,8 @@ const SectionTitle = styled.span`
   font-weight: 700;
   line-height: 130%;
   letter-spacing: 0px;
-  color: #000000
+  color: #000000;
   margin: 0;
-
 `;
 
 const ViewAllButton = styled.button`
@@ -75,14 +74,13 @@ const PropertyContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
 `;
 
 const LocationText = styled.span`
   display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
-  color: #17191a;
+  color: #757b80;
   line-height: 1.2;
 
   white-space: nowrap;
@@ -90,11 +88,31 @@ const LocationText = styled.span`
   text-overflow: ellipsis;
 `;
 
+const PropertyNameContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+`;
+
+const RoomTypeTag = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333333;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+`;
+
 const PropertyName = styled.span`
   display: block;
   font-size: 16px;
   font-weight: 600;
-  color: #17191a;
+  color: #464a4d;
   line-height: 1.3;
 
   white-space: nowrap;
@@ -118,19 +136,20 @@ const RatingText = styled.span`
   display: block;
   font-size: 12px;
   font-weight: 700;
-  color: #666;
+  color: #464a4d;
   line-height: 1.3;
 `;
 
 const PropertyDetails = styled.div`
   font-size: 14px;
-  color: #17191a;
+  color: #464a4d;
   line-height: 1.3;
 `;
 
 const PropertyPrice = styled.div`
-  font-size: 16px;
-  color: #1a1a1a;
+  font-size: 18px;
+  font-family: Andika;
+  color: #17191a;
   font-weight: 700;
   margin-top: auto;
 `;
@@ -159,7 +178,7 @@ export default function RecommendedPropertiesSection({ properties = [], onProper
       {isLoggedIn ? (
         <PropertiesList $itemCount={properties.length}>
           {properties.map((property) => (
-            <PropertyCard key={property.id} onClick={() => onPropertyClick(property.id)}>
+            <PropertyCard key={property.id} onClick={() => onPropertyClick(property)}>
               <PropertyImage>
                 <img src={property.image} alt={property.name} />
               </PropertyImage>
@@ -169,7 +188,10 @@ export default function RecommendedPropertiesSection({ properties = [], onProper
                 <PropertyDetails>
                   {property.size} {property.fee}
                 </PropertyDetails>
-                <PropertyName>{property.name}</PropertyName>
+                <PropertyNameContainer>
+                  <RoomTypeTag>{property.roomType}</RoomTypeTag>
+                  <PropertyName>{property.name}</PropertyName>
+                </PropertyNameContainer>
                 <LocationText>{property.location}</LocationText>
                 <PropertyRating>
                   <svg width="12" height="11" viewBox="0 0 12 11" fill="none" xmlns="http://www.w3.org/2000/svg">

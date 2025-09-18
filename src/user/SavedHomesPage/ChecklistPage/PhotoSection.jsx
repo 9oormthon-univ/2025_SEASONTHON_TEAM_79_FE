@@ -3,7 +3,7 @@ import { useState } from "react";
 import styled from "styled-components";
 
 const PhotoSectionContainer = styled.section`
-  widthL 100%;
+  width: 100%;
   margin: 20px 0;
   position: relative;
 
@@ -37,7 +37,7 @@ const PhotoSlot = styled.div`
   justify-content: center;
   cursor: pointer;
   position: relative;
-  width: 100%; 
+  width: 100%;
   min-width: 108px;
   height: 138px;
   background: #ffffff;
@@ -100,7 +100,7 @@ const SelectionOverlay = styled.div`
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   padding: 0 16px 32px 16px;
 `;
 
@@ -178,6 +178,7 @@ const CancelButton = styled.button`
 export default function PhotoSection({ photos = [], onChange }) {
   const [showSelection, setShowSelection] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // photos가 배열이 아닌 경우 처리
   const safePhotos = Array.isArray(photos) ? photos : [];
@@ -234,10 +235,10 @@ export default function PhotoSection({ photos = [], onChange }) {
     setShowSelection(false);
   };
 
-  // 파일 처리
-  const handleFileSelect = (file) => {
+  // 🔥 파일 처리 - 이제 실제 파일 객체와 미리보기를 함께 저장
+  const handleFileSelect = async (file) => {
     // 파일 크기 체크 (10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       alert("파일 크기가 10MB를 초과합니다. 다른 사진을 선택해주세요.");
       return;
@@ -249,45 +250,67 @@ export default function PhotoSection({ photos = [], onChange }) {
       return;
     }
 
-    // 이미지 미리보기 URL 생성
-    const imageUrl = URL.createObjectURL(file);
+    setIsUploading(true);
 
-    // 사진 배열 업데이트
-    const newPhotos = [...safePhotos];
+    try {
+      // 이미지 미리보기 URL 생성
+      const previewUrl = URL.createObjectURL(file);
 
-    // 배열 길이 확보
-    while (newPhotos.length <= selectedSlotIndex) {
-      newPhotos.push(null);
+      // 🔥 사진 데이터 구조 - 파일 객체와 미리보기를 함께 저장
+      const photoData = {
+        file: file, // 실제 파일 객체 (업로드용)
+        preview: previewUrl, // 미리보기 URL
+        caption: "", // 캡션 (나중에 추가 가능)
+        // 업로드 후에는 서버 정보가 추가됨
+        uploaded: false,
+        id: null,
+        filename: null,
+        contentType: null,
+        size: null,
+        createdAt: null,
+        rawUrl: null,
+      };
+
+      // 사진 배열 업데이트
+      const newPhotos = [...safePhotos];
+
+      // 배열 길이 확보
+      while (newPhotos.length <= selectedSlotIndex) {
+        newPhotos.push(null);
+      }
+
+      // 이전 데이터가 있다면 미리보기 URL 해제
+      if (newPhotos[selectedSlotIndex]?.preview) {
+        URL.revokeObjectURL(newPhotos[selectedSlotIndex].preview);
+      }
+
+      newPhotos[selectedSlotIndex] = photoData;
+      onChange(newPhotos);
+
+      console.log("선택된 파일:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        index: selectedSlotIndex,
+      });
+    } catch (error) {
+      console.error("파일 선택 실패:", error);
+      alert("파일 선택에 실패했습니다.");
+    } finally {
+      setIsUploading(false);
     }
-
-    // 이전 URL이 있다면 메모리 해제
-    if (newPhotos[selectedSlotIndex]) {
-      URL.revokeObjectURL(newPhotos[selectedSlotIndex]);
-    }
-
-    newPhotos[selectedSlotIndex] = imageUrl;
-    onChange(newPhotos);
-
-    // 실제 프로젝트에서는 여기서 서버에 업로드
-    console.log("선택된 파일:", {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: new Date(file.lastModified),
-    });
   };
 
   // 사진 삭제
   const handlePhotoDelete = (index, e) => {
-    e.stopPropagation(); // 부모의 onClick 이벤트 방지
+    e.stopPropagation();
 
     if (confirm("이 사진을 삭제하시겠습니까?")) {
       // 메모리 해제
       if (safePhotos[index]) {
-        URL.revokeObjectURL(safePhotos[index]);
+        URL.revokeObjectURL(safePhotos[index].preview);
       }
 
-      // 🔧 안전한 배열 생성
       const newPhotos = [...safePhotos];
       newPhotos[index] = null;
 
@@ -304,14 +327,17 @@ export default function PhotoSection({ photos = [], onChange }) {
 
   return (
     <PhotoSectionContainer>
-      <SectionTitle>사진 추가 (최대 3장, 각 10MB 제한)</SectionTitle>
+      <SectionTitle>
+        사진 추가 (최대 3장, 각 10MB 제한)
+        {isUploading && " - 업로드 중..."}
+      </SectionTitle>
 
       <PhotoGrid>
         {[0, 1, 2].map((index) => (
           <PhotoSlot key={index} $hasImage={!!photos[index]} onClick={() => handlePhotoSlotClick(index)}>
             {photos[index] ? (
               <>
-                <PhotoImage src={photos[index]} alt={`사진 ${index + 1}`} />
+                <PhotoImage src={photos[index]?.rawUrl || photos[index]?.preview} alt={`사진 ${index + 1}`} />
                 <DeleteButton onClick={(e) => handlePhotoDelete(index, e)}>×</DeleteButton>
               </>
             ) : (

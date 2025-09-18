@@ -33,7 +33,7 @@ const LogoButton = styled.button`
   font-size: 20px;
   line-height: 100%;
   letter-spacing: 0%;
-  color: #3299ff;
+  color: #0073E6;
 
   display: flex;
   align-items: center;

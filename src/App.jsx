@@ -8,11 +8,13 @@ import Map from "./Map/MapBrowseExact";
 import ListingPage from "./Map/ListingExact";
 import MainPage from "./mainpage/MainPage";
 import ChecklistPage from "./user/SavedHomesPage/ChecklistPage/ChecklistPage";
-import LeaseChecklistPage from "./user/LeaseChecklistPage/LeaseChecklistPage";
-import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
 import UserRecordPage from "./user/HomeDetailPage/UserRecordPage";
 import MyHomeDetailPage from "./user/HomeDetailPage/MyHomeDetailPage";
 import MyLeaseChecklistPage from "./user/LeaseChecklistPage/MyLeaseChecklistPage";
+import UserMainPage from "./user/UserMainPage/UserMainPage";
+import ChangeRegionPage from "./user/UserMainPage/ChangeRegionPage";
+import LeaseChecklistPage from "./user/LeaseChecklistPage/MyLeaseChecklistPage";
+import HomeDetailPage from "./user/HomeDetailPage/HomeDetailPage";
 
 export default function App() {
   return (
@@ -47,6 +49,13 @@ export default function App() {
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="mypage" element={<UserMainPage />} />
+        <Route path="changeregion" element={<ChangeRegionPage />} />
+
+        <Route path="map" element={<Map/>}/>
+        <Route path="listingpage" element={<ListingPage/>}/>
+        <Route path="leasechecklistpage" element={<LeaseChecklistPage/>}/>
+        <Route path="homedetailpage" element={<HomeDetailPage/>}/>
       </Route>
     </Routes>
   );

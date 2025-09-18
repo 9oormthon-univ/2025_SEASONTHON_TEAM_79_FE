@@ -182,7 +182,7 @@ const HomeIndicatorArea = styled.div`
 const navItems = [
   { key: "home", icon: HomeIcon, label: "홈", path: "/" },
   { key: "userrecord", icon: StarIcon, label: "나의기록", path: "/userrecord" },
-  { key: "checklist", icon: CheckListIcon, label: "둘러보기", path: "/checklist" },
+  { key: "checklist", icon: CheckListIcon, label: "둘러보기", path: "/listingpage" },
   { key: "mypage", icon: MapIcon, label: "마이페이지", path: "/mypage" },
 ];
 

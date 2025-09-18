@@ -18,8 +18,8 @@ const ToggleItem = styled.div`
 
 const ToggleLabel = styled.span`
   font-family: Andika;
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 700;
   color: #17191a;
 `;
 

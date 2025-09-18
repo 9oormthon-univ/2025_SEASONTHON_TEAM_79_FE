@@ -5,6 +5,33 @@ import UserRecordlist from "./UserRecordlist";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+/* ===== API 함수 ===== */
+const fetchUserChecklistsAPI = async () => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const BACK_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+    const response = await fetch(`${BACK_API_URL}/api/checklists/mine`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("체크리스트 조회 실패:", error);
+    throw error;
+  }
+};
+
 const UserRecordPageContainer = styled.div`
   min-height: 100%;
   background: #ffffff;
@@ -23,11 +50,11 @@ const FilterContainer = styled.div`
 const FilterButton = styled.button`
   align-items: center;
   background: none;
-  border: 1px solid #E8EEF2;
+  border: 1px solid #e8eef2;
   border-radius: 24px;
-  background: ${(props) => (props.isActive ? "#007AFF" : "#FFFFFF")};
+  background: ${(props) => (props.$isActive ? "#0073E6" : "#FFFFFF")};
   font-size: 14px;
-  color: ${(props) => (props.isActive ? "#FFFFFF" : "#464A4D")};
+  color: ${(props) => (props.$isActive ? "#FFFFFF" : "#464A4D")};
   font-weight: 700;
   line-height: 20px;
   cursor: pointer;
@@ -35,37 +62,157 @@ const FilterButton = styled.button`
   margin: 4px;
   width: 21%;
   min-width: 80px;
-  flew-shrink: 0;
+  flex-shrink: 0;
   text-align: center;
   transition: all 0.2s ease;
-  
+
   &:hover {
-    background: ${(props) => (props.isActive ? "#0056CC" : "#F8F9FA")};
+    background: ${(props) => (props.$isActive ? "#0056CC" : "#F8F9FA")};
   }
+`;
+
+/* ===== 로딩/에러 UI ===== */
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #6b7280;
+`;
+
+const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  padding: 20px;
+  text-align: center;
+`;
+
+const ErrorMessage = styled.p`
+  font-size: 16px;
+  color: #ef4444;
+  margin-bottom: 16px;
+`;
+
+const RetryButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #2563eb;
   }
+`;
+
+const EmptyContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #9ca3af;
 `;
 
 export default function UserRecordPage() {
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
   const [sortOrder, setSortOrder] = useState("rating_desc");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+
+  //유저 아이디값
+  const userId = localStorage.getItem("userId");
 
   const sortOptions = [
     { value: "rating_desc", label: "별점순" },
     { value: "recent", label: "최신순" },
   ];
 
-  useEffect(() => {
-    const fetchData = async () => {
-        // 추천 매물 데이터 로드
-        const propertiesData = await fetchRecommendedProperties();
-        setProperties(propertiesData);
-    };
+  // 이미지 URL 처리 함수
+  const getImageUrl = (photos) => {
+    if (!photos || !Array.isArray(photos) || photos.length === 0) {
+      return null; // 기본 이미지는 컴포넌트에서 처리
+    }
 
+    const firstPhoto = photos[0];
+
+    // rawUrl이 있으면 사용
+    if (firstPhoto.rawUrl) {
+      // rawUrl이 절대 경로인지 확인
+      if (firstPhoto.rawUrl.startsWith("http")) {
+        return firstPhoto.rawUrl;
+      } else {
+        // 상대 경로라면 백엔드 URL과 결합
+        const BACK_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+        return `${BACK_API_URL}${firstPhoto.rawUrl}`;
+      }
+    }
+
+    // rawUrl이 없으면 filename으로 URL 구성 시도
+    if (firstPhoto.filename) {
+      const BACK_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+      return `${BACK_API_URL}/api/files/${firstPhoto.filename}`;
+    }
+
+    return null;
+  };
+
+  //데이터 가공
+  const transformApiData = (apiData) => {
+    return apiData.map((item) => {
+
+      const imageUrl = getImageUrl(item.photos);
+
+      return {
+        id: item.id,
+        location: item.address || "주소 정보 없음",
+        name: item.aptNm || "매물명 없음",
+        rating: Number(item.avgScore || 0).toFixed(1),
+        size: `${item.floorAreaSqm || 0}평`,
+        fee: `관리비 ${(item.maintenanceFee || 0).toLocaleString()}만원`,
+        deposit:
+          item.monthly > 0
+            ? `월세 ${(item.deposit || 0).toLocaleString()}/${(item.monthly || 0).toLocaleString()}`
+            : `전세 ${(item.deposit || 0).toLocaleString()}만원`,
+        image: imageUrl, // URL 문자열로 전달
+        hasImage: !!imageUrl, // 이미지 존재 여부
+        photoCount: item.photos?.length || 0, // 사진 개수
+      };
+    });
+  };
+
+  // 데이터 로드 함수
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const apiData = await fetchUserChecklistsAPI(userId);
+      const transformedData = transformApiData(apiData);
+
+      setProperties(transformedData);
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+      setError("체크리스트를 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const sortProperties = () => {
@@ -84,6 +231,8 @@ export default function UserRecordPage() {
 
     if (properties.length > 0) {
       sortProperties();
+    } else {
+      setFilteredProperties([]);
     }
   }, [properties, sortOrder]);
 
@@ -95,72 +244,36 @@ export default function UserRecordPage() {
     setSortOrder(value);
   };
 
-  const fetchRecommendedProperties = async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: 1,
-            location: "서울시 서대문구 남가좌동 29-1",
-            name: "명지힐하우스",
-            rating: 4.7,
-            size: "33m²",
-            fee: "관리비 5만원",
-            deposit: "월세 300/84",
-            image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&h=200&fit=crop&crop=center",
-            isBookmarked: false,
-          },
-          {
-            id: 2,
-            location: "서울시 서대문구 남가좌동",
-            name: "삼성쉐르빌",
-            rating: 4.6,
-            size: "66m²",
-            fee: "관리비 5만원",
-            deposit: "월세 1000/55",
-            image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200&h=200&fit=crop&crop=center",
-            isBookmarked: true,
-          },
-          {
-            id: 3,
-            location: "서울시 서대문구 남가좌동 41",
-            name: "남가좌동 명지힐하우스",
-            rating: 4.7,
-            size: "112m²",
-            fee: "관리비 5만원",
-            deposit: "월세 30/20",
-            image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&h=200&fit=crop&crop=center",
-            isBookmarked: false,
-          },
-          {
-            id: 4,
-            location: "서울시 서대문구 남가좌동",
-            name: "센텀힐스테이트",
-            rating: 4.5,
-            size: "112㎡",
-            fee: "관리비 10만원",
-            deposit: "전세 1억",
-            image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&h=200&fit=crop&crop=center",
-            isBookmarked: true,
-          },
-          {
-            id: 5,
-            location: "서울시 서대문구 남가좌동",
-            name: "명지대1가길 25",
-            rating: 4.4,
-            size: "95㎡",
-            fee: "관리비 5만원",
-            deposit: "전세 5000만원",
-            image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&h=200&fit=crop&crop=center",
-            isBookmarked: true,
-          },
-        ]);
-      }, 1000);
-    });
+  const handlePropertyClick = (Id) => {
+    navigate(`/myhomedetail/${Id}`);
   };
-  const handlePropertyClick = (propertyId) => {
-    navigate(`/property/${propertyId}`);
+
+  const handleRetry = () => {
+    fetchData();
   };
+
+  if (loading) {
+    return (
+      <UserRecordPageContainer>
+        <StatusBar />
+        <ChecklistHeader title="나의 기록" onBack={handleBack} />
+        <LoadingContainer>체크리스트를 불러오는 중...</LoadingContainer>
+      </UserRecordPageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <UserRecordPageContainer>
+        <StatusBar />
+        <ChecklistHeader title="나의 기록" onBack={handleBack} />
+        <ErrorContainer>
+          <ErrorMessage>{error}</ErrorMessage>
+          <RetryButton onClick={handleRetry}>다시 시도</RetryButton>
+        </ErrorContainer>
+      </UserRecordPageContainer>
+    );
+  }
 
   return (
     <UserRecordPageContainer>
@@ -169,12 +282,16 @@ export default function UserRecordPage() {
 
       <FilterContainer>
         {sortOptions.map((option) => (
-          <FilterButton key={option.value} isActive={sortOrder === option.value} onClick={() => handleSortChange(option.value)}>
+          <FilterButton key={option.value} $isActive={sortOrder === option.value} onClick={() => handleSortChange(option.value)}>
             {option.label}
           </FilterButton>
         ))}
       </FilterContainer>
-      <UserRecordlist properties={filteredProperties} onPropertyClick={handlePropertyClick} />
+      {filteredProperties.length === 0 && !loading && !error ? (
+        <EmptyContainer>아직 작성한 체크리스트가 없습니다.</EmptyContainer>
+      ) : (
+        <UserRecordlist properties={filteredProperties} onPropertyClick={handlePropertyClick} />
+      )}
     </UserRecordPageContainer>
   );
 }

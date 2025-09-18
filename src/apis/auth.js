@@ -50,14 +50,30 @@ export const login = async ({ email, password }) => {
   const res = await httpPublic.post("/users/login", { email, password });
 
   // Authorization: Bearer <jwt>
-  const auth = res.headers["authorization"] || res.headers["Authorization"];
-  if (auth) setToken(auth);
+  const authHeader = res.headers["authorization"] || res.headers["Authorization"];
 
-  if (res.data?.userId != null) {
-    localStorage.setItem("userId", String(res.data.userId));
+  if (authHeader) {
+    // "Bearer eyJhbGc..." → "eyJhbGc..." 형태로 변환
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+
+    // 1. 메모리에 저장 (ex: axios interceptor에서 활용)
+    setToken(token);
+
+    // 2. 로컬스토리지에도 저장
+    localStorage.setItem("token", token);
+    console.log("토큰 저장 성공");
+
+    // 사용자 ID도 있으면 저장
+    if (res.data.userId) {
+      localStorage.setItem("userId", res.data.userId);
+      console.log("사용자 ID 저장:", res.data.userId);
+    }
+  } else {
+    console.error("⚠️ Authorization 헤더가 없습니다");
+    console.log("사용 가능한 헤더들:", Object.keys(res.headers));
   }
 
-  return res.data; // 서버 스펙에 맞게 그대로 반환
+  return res.data; // { userId: Long } 예상
 };
 
 /** 회원가입: POST /users/register */
