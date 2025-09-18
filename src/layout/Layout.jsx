@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Outlet, useLocation } from "react-router-dom";
 import BottomNav from "./BottomNav";
 
-const SHELL_MAX_WIDTH = 480; // 큰 화면에서 중앙 고정폭 (원하면 414/430/520 등으로 조절)
+const SHELL_MAX_WIDTH = 480;
 
 const Frame = styled.div`
   width: 100%;
@@ -29,38 +29,39 @@ const Body = styled.main`
   -webkit-overflow-scrolling: touch;
   background: #ffffff;
 
-  /* 하단 안전영역(아이폰) + 바텀탭 높이 고려 */
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  /* 바텀탭 있을 때만 여백 */
+  padding-bottom: ${(p) =>
+    p.$hasBottomNav
+      ? "calc(env(safe-area-inset-bottom, 0px) + 72px)"
+      : "env(safe-area-inset-bottom, 0px)"};
 `;
 
-/* 바텀탭이 스크롤되지 않도록 Frame의 자식으로 두고 Body만 스크롤 */
 const FooterBar = styled.footer`
   position: sticky;
   bottom: 0;
   z-index: 5;
   background: #fff;
-
   padding-bottom: env(safe-area-inset-bottom, 0px);
 `;
 
 export default function Layout() {
   const location = useLocation();
 
-  //바텀 네비게이션을 숨길 페이지들
-  const hideBottomNavPages = ["/login", "/signup", "/find-id", "/find-password","/checklist"];
-  const showBottomNav = !hideBottomNavPages.includes(location.pathname);
+  // ✅ 이 두 경로에서만 BottomNav 숨김
+  const path = location.pathname.replace(/\/+$/, ""); // 뒤 슬래시 정규화
+  const hideRoutes = ["/map", "/listingpage"];
+  const showBottomNav = !hideRoutes.includes(path);
+
   return (
-    <>
-      <Frame>
-        <Body $hasBottomNav={showBottomNav}>
-          <Outlet />
-        </Body>
-        {showBottomNav && (
-          <FooterBar>
-            <BottomNav />
-          </FooterBar>
-        )}
-      </Frame>
-    </>
+    <Frame>
+      <Body $hasBottomNav={showBottomNav}>
+        <Outlet />
+      </Body>
+      {showBottomNav && (
+        <FooterBar>
+          <BottomNav />
+        </FooterBar>
+      )}
+    </Frame>
   );
 }

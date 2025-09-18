@@ -1,4 +1,4 @@
-// src/user/HomeDetailPage/HomeDetailPage.jsx
+// src/user/HomeDetailPage/MyHomeDetailPage.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import styled from "styled-components";
 import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
@@ -207,7 +207,7 @@ async function fetchChecklistAudio({ checkId, signal }) {
   }
 }
 
-export default function HomeDetailPage() {
+export default function MyHomeDetailPage() {
   const params = useParams();
   const id = params?.id;
   const location = useLocation();
@@ -381,9 +381,9 @@ export default function HomeDetailPage() {
       </Section>
 
       <Tabs>
-        <TabLink to={`/homedetailpage/${id ?? ""}`} end>상세보기</TabLink>
+        <TabLink to={`/myhomedetailpage/${id ?? ""}`} end>상세보기</TabLink>
         <TabLink
-          to={`/leasechecklistpage/${id ?? ""}`}
+          to={`/myleasechecklistpage/${id ?? ""}`}
           state={{ item:{ id, title:name, addr:address, image:photo, deal:priceText } }}
         >
           집 계약 체크리스트

@@ -1,7 +1,8 @@
+// src/pages/Signup.jsx
 import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { signup, sendEmailCode, verifyEmailCode } from "../../apis/auth"; // ✅ API 불러오기
+import { signup, sendEmailCode, verifyEmailCode } from "../../apis/auth"; // ✅ API
 
 // ===== 스타일 상수 =====
 const SHELL_MAX_WIDTH = 715;
@@ -178,14 +179,17 @@ const Submit = styled.button`
 // ===== 컴포넌트 =====
 export default function Signup() {
   const nav = useNavigate();
+
+  // 상태
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [pw2, setPw2] = useState("");
   const [name, setName] = useState("");
-  const [sent, setSent] = useState(false);
-  const [verified, setVerified] = useState(false);
-  const [timer, setTimer] = useState(0);
+
+  const [sent, setSent] = useState(false);       // 인증번호 발송 여부
+  const [verified, setVerified] = useState(false);// 인증 완료 여부
+  const [timer, setTimer] = useState(0);         // 유효시간(초)
   const [err, setErr] = useState("");
 
   // ✅ 유효성 검사
@@ -195,12 +199,21 @@ export default function Signup() {
   const nameOk = name.trim().length > 0;
   const canSubmit = emailOk && verified && pwOk && pwMatch && nameOk;
 
-  // ✅ 타이머
+  // ✅ 타이머 감소
   useEffect(() => {
     if (!timer) return;
     const id = setInterval(() => setTimer((t) => Math.max(0, t - 1)), 1000);
     return () => clearInterval(id);
   }, [timer]);
+
+  // ✅ 이메일이 바뀌면 인증 상태 초기화
+  useEffect(() => {
+    setSent(false);
+    setVerified(false);
+    setCode("");
+    setTimer(0);
+    setErr("");
+  }, [email]);
 
   // ✅ 인증코드 전송
   const onSend = async () => {
@@ -210,7 +223,8 @@ export default function Signup() {
       alert("인증번호가 이메일로 전송되었습니다.");
       setSent(true);
       setVerified(false);
-      setTimer(180);
+      setCode("");
+      setTimer(180); // 3분
     } catch (e) {
       console.error("인증번호 전송 실패:", e);
       alert(e?.response?.data?.message ?? "인증번호 전송 실패");
@@ -219,7 +233,7 @@ export default function Signup() {
 
   // ✅ 인증코드 검증
   const onVerify = async () => {
-    if (!sent) return;
+    if (!sent || timer === 0) return;
     try {
       await verifyEmailCode({ email, code });
       setVerified(true);
@@ -240,6 +254,11 @@ export default function Signup() {
     try {
       await signup({ email, password, name });
       alert("회원가입이 완료되었습니다!");
+
+      // 성공 후 상태 정리
+      setEmail(""); setPassword(""); setPw2(""); setName("");
+      setSent(false); setVerified(false); setCode(""); setTimer(0);
+
       nav("/login");
     } catch (e) {
       console.error("회원가입 실패:", e);
@@ -303,7 +322,7 @@ export default function Signup() {
                     type="button"
                     onClick={onVerify}
                     variant="primary"
-                    disabled={!sent || verified}
+                    disabled={!sent || verified || timer === 0}
                   >
                     {verified ? "완료" : "확인"}
                   </SuffixBtn>
@@ -311,12 +330,15 @@ export default function Signup() {
                 {!verified && sent && code.length === 0 && (
                   <Hint>메일로 받은 숫자를 입력하세요.</Hint>
                 )}
+                {sent && timer === 0 && !verified && (
+                  <Hint variant="danger">인증 시간이 만료되었습니다. 다시 전송하세요.</Hint>
+                )}
                 {verified && <Hint>인증이 완료되었습니다.</Hint>}
               </Group>
 
               {/* 비밀번호 */}
               <Group>
-                <Label htmlFor="pw">비밀번호</Label>
+                <Label htmlFor="pw">비밀번호 (영문, 숫자 조합 8자 이상)</Label>
                 <Field>
                   <Input
                     id="pw"
@@ -327,11 +349,14 @@ export default function Signup() {
                     autoComplete="new-password"
                   />
                 </Field>
+                {!pwOk && password.length > 0 && (
+                  <Hint variant="danger">영문과 숫자를 포함해 8자 이상이어야 해요.</Hint>
+                )}
               </Group>
 
               {/* 비밀번호 확인 */}
               <Group>
-                <Label htmlFor="pw2">비밀번호 (영문, 숫자 조합 8자 이상)</Label>
+                <Label htmlFor="pw2">비밀번호 확인</Label>
                 <Field>
                   <Input
                     id="pw2"
@@ -342,9 +367,6 @@ export default function Signup() {
                     autoComplete="new-password"
                   />
                 </Field>
-                {!pwOk && password.length > 0 && (
-                  <Hint variant="danger">영문과 숫자를 포함해 8자 이상이어야 해요.</Hint>
-                )}
                 {password.length > 0 && pw2.length > 0 && !pwMatch && (
                   <Hint variant="danger">비밀번호가 일치하지 않습니다.</Hint>
                 )}

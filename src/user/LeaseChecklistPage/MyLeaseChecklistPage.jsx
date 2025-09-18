@@ -1,4 +1,4 @@
-// src/user/LeaseChecklistPage/LeaseChecklistPage.jsx
+// src/user/LeaseChecklistPage/MyLeaseChecklistPage.jsx
 // 흰색 배경 통일 + 카드 테두리 O + 탭은 활성일 때만 밑줄
 // 토글 기본 OFF, 전구 클릭 모달, 하단 버튼: 초기화/저장하기(수동 저장)
 
@@ -107,25 +107,6 @@ const getToken = () =>
   localStorage.getItem("auth_token") ||
   "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjMsIm5hbWUiOiJhZG1pbiIsImlhdCI6MTc1ODA4OTYxMywiZXhwIjoxNzU4Njk0NDEzfQ.Rg7kGFbRau7tpGb6WbQ1U71dYlk8jZtmtDdZoYmQ-_s";
 
-function getUserIdFromTokenSafe() {
-  try {
-    const token = getToken();
-    const payload = token.split(".")[1];
-    if (!payload) return undefined;
-    const json = JSON.parse(
-      decodeURIComponent(
-        atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      )
-    );
-    return toNum(json?.userId) ?? toNum(json?.id) ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 /** 보호 경로 리소스를 Blob URL로 변환 (Authorization 헤더 포함) */
 function useAuthedSrc(src) {
   const [out, setOut] = useState("");
@@ -154,7 +135,60 @@ function useAuthedSrc(src) {
   return out;
 }
 
-/** 페이지 API에서 checkId에 해당하는 레코드 찾기: /api/users/{userId}/checklists/page */
+/* ====== NEW: 서버가 주는 계약 유형 읽기 ====== */
+const mapContract = (v) => {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return null;
+  if (["jeonse","전세","deposit","full"].some((k) => s.includes(k))) return "jeonse";
+  if (["monthly","월세","rent"].some((k) => s.includes(k))) return "monthly";
+  return null;
+};
+function getContractTypeFromServer(raw) {
+  // 우선순위: 최상위 → items 내 → 숫자값 보조 판별
+  const top = mapContract(raw?.contractType ?? raw?.rentType);
+  if (top) return top;
+  const inItems = mapContract(raw?.items?.contractType ?? raw?.items?.rentType);
+  if (inItems) return inItems;
+
+  const m = toNum(raw?.items?.monthly);
+  const d = toNum(raw?.items?.deposit);
+  if (typeof m === "number" && m > 0) return "monthly";
+  if (typeof d === "number" && (m == null || m === 0)) return "jeonse";
+  return null;
+}
+
+/* ====== NEW: 단건 조회 /api/checklists/{checkId} ====== */
+async function fetchChecklistById({ checkId, signal }) {
+  const url = withBase(`/api/checklists/${encodeURIComponent(checkId)}?t=${Date.now()}`);
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    signal,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const msg =
+      res.status === 401 ? "로그인이 필요합니다. (401)" :
+      res.status === 403 ? "접근 권한이 없습니다. (403)" :
+      res.status === 404 ? "해당 체크리스트를 찾을 수 없습니다. (404)" :
+      `조회 실패 (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
+  const json = await res.json();
+  return {
+    raw: json,
+    contract: getContractTypeFromServer(json),
+    photos: Array.isArray(json?.photos) ? json.photos : [],
+    imageUrl: json?.imageUrl || "",
+    items: json?.items || {},
+  };
+}
+
+/** (백업 경로) 페이지 API에서 checkId 레코드 찾기 */
 async function fetchChecklistFromPagedAPI({ userId, checkId, signal, pageSize = 30, maxPages = 20 }) {
   let page = 0;
   while (page < maxPages) {
@@ -185,7 +219,7 @@ async function fetchChecklistFromPagedAPI({ userId, checkId, signal, pageSize = 
 
 /* ===== 메인 컴포넌트 ===== */
 export default function LeaseChecklistPage() {
-  // URL: /leasechecklistpage/:id  혹은 state로 전달됨
+  // URL: /myleasechecklistpage/:id  혹은 state로 전달됨
   const { id: idParam, userId: paramUserId } = useParams();
   const location = useLocation();
   const item = location.state?.item;
@@ -200,55 +234,50 @@ export default function LeaseChecklistPage() {
   const [whyModal, setWhyModal] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  /* ===== 1) /api/users/{userId}/checklists/page 에서 레코드 조회 후 전세/월세 판별 ===== */
+  /* ===== 1) 우선 /api/checklists/{id} 에서 계약유형(contractType) 수신 ===== */
   useEffect(() => {
     let aborted = false;
     (async () => {
       try {
         setErrorMsg("");
+
+        // checkId 없으면 상태 텍스트 기반 추론만
         if (!theId) {
           const det = detectContractFromItem(item) ?? "monthly";
           setContract(det);
           return;
         }
 
-        const userId =
-          toNum(paramUserId) ??
-          toNum(location.state?.userId) ??
-          toNum(item?.userId) ??
-          getUserIdFromTokenSafe();
-
-        if (!userId) {
-          // userId가 없으면 페이지 API를 못 쓰므로, 상태/텍스트 기반 추론만 수행
-          const det = detectContractFromItem(item) ?? "monthly";
+        // 1차: 단건 API에서 직접 판별(권장 경로)
+        try {
+          const byId = await fetchChecklistById({ checkId: theId, signal: undefined });
+          if (aborted) return;
+          setServerData(byId);
+          const det = byId.contract ?? detectContractFromItem(item) ?? "monthly";
           setContract(det);
           return;
-        }
+        } catch (e1) {
+          // 2차: 페이지 API로 백업 조회 후 판별
+          const userId =
+            toNum(paramUserId) ??
+            toNum(location.state?.userId) ??
+            toNum(item?.userId);
 
-        const found = await fetchChecklistFromPagedAPI({ userId, checkId: theId, signal: undefined });
-        if (aborted) return;
+          if (!userId) throw e1; // 사용자 ID 없으면 더 진행 불가 → 위 에러 노출
 
-        if (!found) {
-          setErrorMsg("목록에서 해당 체크리스트를 찾을 수 없습니다.");
-          const det = detectContractFromItem(item) ?? "monthly";
+          const found = await fetchChecklistFromPagedAPI({ userId, checkId: theId, signal: undefined });
+          if (aborted) return;
+
+          if (!found) {
+            setErrorMsg("목록에서 해당 체크리스트를 찾을 수 없습니다.");
+            setContract(detectContractFromItem(item) ?? "monthly");
+            return;
+          }
+
+          setServerData(found);
+          const det = getContractTypeFromServer(found) ?? detectContractFromItem(item) ?? "monthly";
           setContract(det);
-          return;
         }
-
-        setServerData(found);
-
-        // 명세의 items.monthly / items.deposit 기준으로 엄격 판별
-        const monthly = toNum(found?.items?.monthly);
-        const deposit = toNum(found?.items?.deposit);
-
-        const det =
-          typeof monthly === "number" && monthly > 0
-            ? "monthly"
-            : typeof deposit === "number" && deposit > 0
-            ? "jeonse"
-            : detectContractFromItem(item) ?? "monthly";
-
-        setContract(det);
       } catch (e) {
         if (!aborted) {
           setErrorMsg(e?.message || "데이터를 불러오지 못했습니다.");
@@ -262,7 +291,7 @@ export default function LeaseChecklistPage() {
 
   /* ===== 2) 사진 표시(서버 > state > 기본) — 보호경로 대응 ===== */
   const rawPhoto =
-    serverData?.photos?.[0]?.rawUrl ||
+    (serverData?.photos?.[0]?.rawUrl) ||
     serverData?.imageUrl ||
     item?.image ||
     item?.사진 ||
@@ -340,14 +369,14 @@ export default function LeaseChecklistPage() {
       {/* 탭 */}
       <Tabs>
         <TabLink
-          to={theId ? `/homedetailpage/${theId}` : "/homedetailpage/"}
+          to={theId ? `/myhomedetailpage/${theId}` : "/myhomedetailpage/"}
           state={theId ? undefined : { id: idFromState, item }}
           end
         >
           상세보기
         </TabLink>
         <TabLink
-          to={theId ? `/leasechecklistpage/${theId}` : "/leasechecklistpage"}
+          to={theId ? `/myleasechecklistpage/${theId}` : "/myleasechecklistpage"}
           state={theId ? undefined : { id: idFromState, item }}
         >
           집 계약 체크리스트
